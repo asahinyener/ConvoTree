@@ -34,7 +34,7 @@ if api_key:
     client = OpenAI(api_key=api_key)
 
 # Define the model to use
-GPT_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+GPT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5")
 
 # Load prompts
 PROMPT_PATH = Path("prompts/compressor_prompt.txt")
@@ -410,7 +410,16 @@ class TerminalChat:
             
             # Build initial knowledge graph
             print("Building initial knowledge graph from provided content...")
-            self.bundle = self.compress()
+            
+            # First, compress all messages to build initial KG
+            self.bundle = compress_chat(self.messages)
+            
+            # Set the last compressed index to current message count
+            self._last_compressed_index = len(self.messages)
+            
+            # Normalize the initial KG
+            if self.bundle and self.bundle.get("kg"):
+                self.bundle["kg"] = normalize_kg(self.bundle.get("kg", []))
             
             # Detect initial topic from content
             if self.bundle and self.bundle.get("kg"):
@@ -495,9 +504,11 @@ class TerminalChat:
         # Update current topic based on user input
         self.current_topic = user_input
         
-        # If this is the first message, compress the conversation
+        # If this is the first message and we don't have a bundle yet, compress the conversation
         if not self.bundle:
-            self.bundle = self.compress()
+            # First time compression
+            self.bundle = compress_chat(self.messages)
+            self._last_compressed_index = len(self.messages) - 1  # Exclude the current user message
         
         # Generate response
         if self.sequential_mode:
@@ -508,7 +519,7 @@ class TerminalChat:
             # Add assistant message to history
             self.add_message("assistant", response)
             
-            # Recompress the entire conversation to update the KG
+            # Recompress the conversation to update the KG, preserving previous knowledge
             self.bundle = self.compress()
             
             # Update current topic after compression
