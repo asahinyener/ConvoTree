@@ -9,15 +9,14 @@ import argparse
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
-import networkx as nx
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 # Load environment variables from .env file
 load_dotenv()
 
 from openai import OpenAI
+
+# Import KG utilities
+from kg_utils import EntityNormalizer, normalize_triple, normalize_kg, draw_kg, KnowledgePrioritizer
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Configuration
@@ -56,42 +55,41 @@ RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
 # ─────────────────────────────────────────────────────────────────────────────
 # Knowledge Graph Functions
 # ─────────────────────────────────────────────────────────────────────────────
-def draw_kg(triples: List[str], outfile: Path) -> None:
-    """Render a simple force-layout PNG of the KG triples."""
-    if not triples:
-        return
-    G = nx.DiGraph()
-    for trip in triples:
-        try:
-            s, p, o = (x.strip() for x in trip.split("|", 2))
-        except ValueError:
-            continue
-        G.add_edge(s, o, label=p)
-    pos = nx.spring_layout(G, k=0.6, seed=42)
-    plt.figure(figsize=(8, 6))
-    nx.draw_networkx_nodes(G, pos, node_size=500, node_color="lightblue")
-    nx.draw_networkx_edges(G, pos, arrows=True, arrowstyle="-|>")
-    nx.draw_networkx_labels(G, pos, font_size=8)
-    nx.draw_networkx_edge_labels(
-        G, pos, edge_labels=nx.get_edge_attributes(G, "label"), font_size=6
-    )
-    plt.axis("off")
-    plt.tight_layout()
-    outfile.parent.mkdir(parents=True, exist_ok=True)
-    plt.savefig(outfile, dpi=150)
-    plt.close()
+# Using functions from kg_utils.py
 
 
-def build_resume_prompt(kg: List[str], ds: Dict[str, Any]) -> str:
+def build_resume_prompt(kg: List[str], ds: Dict[str, Any], current_topic: str = "") -> str:
     """Build a prompt for resuming the conversation."""
     tmpl = TEMPLATE_PATH.read_text(encoding="utf-8")
-    # Include more KG facts (up to 15 instead of 7) for better context
-    bullets = [f"• {t.replace('|', ' → ')}" for t in kg[:15]]
+    
+    # Normalize the knowledge graph
+    normalized_kg = normalize_kg(kg)
+    
+    # Prioritize triples based on current topic if we have one
+    if current_topic:
+        prioritizer = KnowledgePrioritizer()
+        prioritized_kg = prioritizer.prioritize_kg(
+            normalized_kg, 
+            current_topic=current_topic,
+            max_triples=20  # Include more facts for better context
+        )
+    else:
+        prioritized_kg = normalized_kg[:20]  # Limit to 20 facts if no prioritization
+    
+    # Format facts as bullets
+    bullets = [f"• {t.replace('|', ' → ')}" for t in prioritized_kg]
     facts = "\n".join(bullets) if bullets else "(none)"
-    return (
-        tmpl.replace("{{facts}}", facts)
-            .replace("{{ds_json}}", json.dumps(ds, ensure_ascii=False))
-    )
+    
+    # Add current topic to the prompt if available
+    prompt = tmpl.replace("{{facts}}", facts).replace("{{ds_json}}", json.dumps(ds, ensure_ascii=False))
+    
+    if current_topic:
+        prompt = prompt.replace(
+            "Here are some facts I know:",
+            f"The current topic is: {current_topic}\n\nHere are some relevant facts I know:"
+        )
+    
+    return prompt
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -117,13 +115,18 @@ def compress_chat(messages: List[Dict[str, str]]) -> Dict[str, Any]:
         return fallback_compress_chat(messages)
 
 
-def resume_chat(bundle: Dict[str, Any], next_user: str) -> Dict[str, str]:
+def resume_chat(bundle: Dict[str, Any], next_user: str, current_topic: str = "") -> Dict[str, str]:
     """Generate a response based on the knowledge graph and the next user message."""
     if not client:
         return {"assistant_reply": fallback_generate_response(bundle, next_user)}
     
     try:
-        prompt = build_resume_prompt(bundle.get("kg", []), bundle.get("ds", {}))
+        # Use current topic if provided, otherwise extract from next_user
+        topic_to_use = current_topic if current_topic else next_user
+        
+        # Build prompt with topic awareness
+        prompt = build_resume_prompt(bundle.get("kg", []), bundle.get("ds", {}), topic_to_use)
+        
         resp = client.chat.completions.create(
             model=GPT_MODEL,
             messages=[
@@ -396,6 +399,8 @@ class TerminalChat:
         self.bundle = None
         self.sequential_mode = True
         self.recorder = ChatRecorder()
+        self.prioritizer = KnowledgePrioritizer()
+        self.current_topic = ""
         
         # Initialize with content if provided
         if initial_content:
@@ -406,6 +411,11 @@ class TerminalChat:
             # Build initial knowledge graph
             print("Building initial knowledge graph from provided content...")
             self.bundle = self.compress()
+            
+            # Detect initial topic from content
+            if self.bundle and self.bundle.get("kg"):
+                self._update_current_topic()
+                
             print("Initial knowledge graph built successfully.")
     
     def add_message(self, role: str, content: str):
@@ -426,6 +436,9 @@ class TerminalChat:
         # Add user message to history
         self.add_message("user", user_input)
         
+        # Update current topic based on user input
+        self.current_topic = user_input
+        
         # If this is the first message, compress the conversation
         if not self.bundle:
             self.bundle = self.compress()
@@ -433,7 +446,7 @@ class TerminalChat:
         # Generate response
         if self.sequential_mode:
             # In sequential mode, we update the KG with each exchange
-            response_data = resume_chat(self.bundle, user_input)
+            response_data = resume_chat(self.bundle, user_input, self.current_topic)
             response = response_data["assistant_reply"]
             
             # Add assistant message to history
@@ -441,9 +454,12 @@ class TerminalChat:
             
             # Recompress the entire conversation to update the KG
             self.bundle = self.compress()
+            
+            # Update current topic after compression
+            self._update_current_topic()
         else:
             # In non-sequential mode, we use the initial KG
-            response_data = resume_chat(self.bundle, user_input)
+            response_data = resume_chat(self.bundle, user_input, self.current_topic)
             response = response_data["assistant_reply"]
             
             # Add assistant message to history
@@ -456,6 +472,37 @@ class TerminalChat:
         self.sequential_mode = not self.sequential_mode
         return self.sequential_mode
     
+    def _update_current_topic(self):
+        """Update the current conversation topic based on recent messages."""
+        if not self.messages:
+            return
+            
+        # Get the most recent user message
+        recent_user_msgs = [m["content"] for m in self.messages[-3:] 
+                           if m["role"] == "user"]
+        
+        if recent_user_msgs:
+            # Use the most recent user message as the current topic
+            self.current_topic = recent_user_msgs[-1]
+            
+            # Extract key entities from the message to enhance topic detection
+            if self.bundle and self.bundle.get("kg"):
+                # Look for entities in the KG that appear in the current topic
+                entities = set()
+                for triple in self.bundle["kg"]:
+                    try:
+                        s, _, o = triple.split("|", 2)
+                        if s.lower() in self.current_topic.lower():
+                            entities.add(s)
+                        if o.lower() in self.current_topic.lower():
+                            entities.add(o)
+                    except ValueError:
+                        continue
+                
+                # Add key entities to the current topic
+                if entities:
+                    self.current_topic += " " + " ".join(entities)
+    
     def display_kg(self):
         """Display the current knowledge graph."""
         if not self.bundle or not self.bundle.get("kg"):
@@ -463,14 +510,30 @@ class TerminalChat:
             return
         
         kg = self.bundle.get("kg", [])
+        
+        # Normalize the knowledge graph
+        normalized_kg = normalize_kg(kg)
+        
+        # Prioritize triples based on current topic if we have one
+        if self.current_topic:
+            prioritized_kg = self.prioritizer.prioritize_kg(
+                normalized_kg, 
+                current_topic=self.current_topic
+            )
+        else:
+            prioritized_kg = normalized_kg
+        
         print("\n=== Knowledge Graph ===")
-        for i, fact in enumerate(kg, 1):
+        for i, fact in enumerate(prioritized_kg, 1):
             print(f"{i}. {fact.replace('|', ' → ')}")
+        
+        if self.current_topic:
+            print(f"\nCurrent topic: {self.current_topic}")
         print()
         
         # Record KG snapshot if recording is enabled
         if self.recorder.enabled:
-            self.recorder.add_kg_snapshot(kg)
+            self.recorder.add_kg_snapshot(prioritized_kg)
     
     def save_kg_image(self, filename: str = "kg_snapshot.png"):
         """Save the knowledge graph as an image."""
@@ -479,8 +542,21 @@ class TerminalChat:
             return None
         
         kg = self.bundle.get("kg", [])
+        
+        # Normalize the knowledge graph
+        normalized_kg = normalize_kg(kg)
+        
+        # Prioritize triples based on current topic if we have one
+        if self.current_topic:
+            prioritized_kg = self.prioritizer.prioritize_kg(
+                normalized_kg, 
+                current_topic=self.current_topic
+            )
+        else:
+            prioritized_kg = normalized_kg
+        
         outfile = RECORDINGS_DIR / filename
-        draw_kg(kg, outfile)
+        draw_kg(prioritized_kg, outfile)
         print(f"Knowledge Graph image saved to {outfile}")
         return outfile
 
