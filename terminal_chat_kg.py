@@ -5,6 +5,7 @@ import os
 import json
 import datetime
 import time
+import argparse
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
@@ -306,14 +307,106 @@ class ChatRecorder:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# File Loading Functions
+# ─────────────────────────────────────────────────────────────────────────────
+def load_content_from_file(filepath: str) -> str:
+    """Load content from a text file."""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as file:
+            content = file.read()
+        return content
+    except Exception as e:
+        print(f"Error loading file: {e}")
+        return ""
+
+def parse_content_to_messages(content: str) -> List[Dict[str, str]]:
+    """Parse content into a list of messages.
+    
+    This function tries to detect conversation format. If it can't,
+    it treats the entire content as a single user message.
+    """
+    messages = []
+    
+    # Try to detect conversation format
+    lines = content.split('\n')
+    current_role = None
+    current_content = []
+    
+    # Common patterns for conversation markers
+    user_patterns = ['user:', 'human:', 'you:', 'question:', 'q:']
+    assistant_patterns = ['assistant:', 'ai:', 'bot:', 'answer:', 'a:']
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        line_lower = line.lower()
+        
+        # Check if this line starts a new message
+        is_user = any(line_lower.startswith(pattern) for pattern in user_patterns)
+        is_assistant = any(line_lower.startswith(pattern) for pattern in assistant_patterns)
+        
+        if is_user or is_assistant:
+            # Save the previous message if there was one
+            if current_role and current_content:
+                messages.append({
+                    "role": current_role,
+                    "content": '\n'.join(current_content).strip()
+                })
+                current_content = []
+            
+            # Set the new role
+            current_role = "user" if is_user else "assistant"
+            
+            # Extract content after the role marker
+            content_start = line.find(':') + 1
+            if content_start > 0:
+                current_content.append(line[content_start:].strip())
+        elif current_role:
+            # Continue the current message
+            current_content.append(line)
+        else:
+            # If no role detected yet, assume it's user content
+            current_role = "user"
+            current_content.append(line)
+    
+    # Add the last message
+    if current_role and current_content:
+        messages.append({
+            "role": current_role,
+            "content": '\n'.join(current_content).strip()
+        })
+    
+    # If no messages were detected, treat the entire content as a single user message
+    if not messages and content.strip():
+        messages.append({
+            "role": "user",
+            "content": content.strip()
+        })
+    
+    return messages
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Terminal Chat Interface
 # ─────────────────────────────────────────────────────────────────────────────
 class TerminalChat:
-    def __init__(self):
+    def __init__(self, initial_content: Optional[str] = None):
         self.messages = []
         self.bundle = None
         self.sequential_mode = True
         self.recorder = ChatRecorder()
+        
+        # Initialize with content if provided
+        if initial_content:
+            initial_messages = parse_content_to_messages(initial_content)
+            for msg in initial_messages:
+                self.add_message(msg["role"], msg["content"])
+            
+            # Build initial knowledge graph
+            print("Building initial knowledge graph from provided content...")
+            self.bundle = self.compress()
+            print("Initial knowledge graph built successfully.")
     
     def add_message(self, role: str, content: str):
         """Add a message to the conversation history."""
@@ -396,6 +489,18 @@ class TerminalChat:
 # Main Function
 # ─────────────────────────────────────────────────────────────────────────────
 def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="ConvoTree Terminal Chat with KG Integration")
+    parser.add_argument("--file", "-f", type=str, help="Path to a text file to initialize the conversation")
+    parser.add_argument("--model", "-m", type=str, help="OpenAI model to use (default: from .env or gpt-3.5-turbo)")
+    args = parser.parse_args()
+    
+    # Update model if specified
+    global GPT_MODEL
+    if args.model:
+        GPT_MODEL = args.model
+        print(f"Using specified model: {GPT_MODEL}")
+    
     print("\n=== ConvoTree Terminal Chat ===")
     print("Type 'exit' to quit, 'kg' to view the knowledge graph, or 'toggle' to toggle sequential compression")
     print("Type 'record' to start recording, 'stop' to stop recording")
@@ -411,8 +516,21 @@ def main():
     else:
         print(f"OpenAI API key found. Using API with model: {GPT_MODEL}\n")
     
+    # Initialize chat with file content if provided
+    initial_content = None
+    if args.file:
+        print(f"Loading content from file: {args.file}")
+        initial_content = load_content_from_file(args.file)
+        if not initial_content:
+            print("Failed to load content from file. Starting with empty conversation.")
+    
     # Initialize chat
-    chat = TerminalChat()
+    chat = TerminalChat(initial_content)
+    
+    # Display initial knowledge graph if it exists
+    if chat.bundle and chat.bundle.get("kg"):
+        print("\nInitial Knowledge Graph:")
+        chat.display_kg()
     
     # Chat loop
     while True:
