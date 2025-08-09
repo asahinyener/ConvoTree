@@ -77,6 +77,15 @@ class ChatRecorder:
             return
         
         self.transcript.append(f"\n>>> {message} <<<\n")
+        
+    def add_new_facts(self, facts, source):
+        """Add newly extracted facts to the transcript."""
+        if not self.enabled or not facts:
+            return
+            
+        self.transcript.append(f"\n>>> New facts from {source}: <<<")
+        for fact in facts:
+            self.transcript.append(f"  - {fact}")
 
 # Knowledge Graph simulation
 class KnowledgeGraph:
@@ -95,15 +104,35 @@ class KnowledgeGraph:
         if api_key:
             self.client = OpenAI(api_key=api_key)
     
-    def extract_facts(self, message: str) -> List[str]:
-        """Extract potential facts from a message using OpenAI API."""
+    def extract_facts(self, message: str, is_user_query: bool = False) -> List[str]:
+        """Extract potential facts from a message using OpenAI API.
+        
+        Args:
+            message: The message to extract facts from
+            is_user_query: Whether the message is a user query (affects extraction approach)
+        
+        Returns:
+            List of extracted facts
+        """
         # If no API key or client, use fallback extraction
         if not self.client:
             return self._fallback_extract_facts(message)
         
         try:
             # Create prompt for fact extraction
-            prompt = f"""Extract 3-5 factual statements from the following text. 
+            if is_user_query:
+                # For user queries, we need to extract both explicit facts and implied knowledge
+                prompt = f"""Extract 3-5 factual statements from the following user query.
+Focus on both explicit facts and implied knowledge about jazz, musicians, albums, and musical concepts.
+For questions, extract what the user might already know based on their question.
+Return ONLY a numbered list of facts, one per line, with no additional text.
+
+User Query: {message}
+
+Facts:"""
+            else:
+                # For assistant responses, focus on explicit facts
+                prompt = f"""Extract 3-5 factual statements from the following text. 
 Focus on jazz-related facts, musicians, albums, and musical concepts.
 Return ONLY a numbered list of facts, one per line, with no additional text.
 
@@ -190,15 +219,28 @@ Facts:"""
         
         return new_facts
     
-    def update(self, message: str):
-        """Update the knowledge graph with new facts from a message."""
-        if not self.sequential_mode:
-            return
+    def update(self, message: str, is_user_query: bool = False) -> List[str]:
+        """Update the knowledge graph with new facts from a message.
         
-        new_facts = self.extract_facts(message)
+        Args:
+            message: The message to extract facts from
+            is_user_query: Whether the message is a user query
+            
+        Returns:
+            List[str]: List of new facts that were added to the knowledge graph
+        """
+        if not self.sequential_mode:
+            return []
+        
+        new_facts = self.extract_facts(message, is_user_query)
+        added_facts = []
+        
         for fact in new_facts:
             if fact not in self.facts:
                 self.facts.append(fact)
+                added_facts.append(fact)
+                
+        return added_facts
     
     def display(self):
         """Display the current knowledge graph."""
@@ -330,8 +372,23 @@ def main():
             recorder.add_message("assistant", response)
         
         # Update knowledge graph if sequential compression is enabled
-        kg.update(user_input)
-        kg.update(response)
+        user_facts = kg.update(user_input, is_user_query=True)
+        if user_facts and len(user_facts) > 0:
+            print("\n>>> Added facts from user query:")
+            for fact in user_facts:
+                print(f"  - {fact}")
+            print()
+            if recorder.enabled:
+                recorder.add_new_facts(user_facts, "user query")
+            
+        assistant_facts = kg.update(response, is_user_query=False)
+        if assistant_facts and len(assistant_facts) > 0:
+            print("\n>>> Added facts from assistant response:")
+            for fact in assistant_facts:
+                print(f"  - {fact}")
+            print()
+            if recorder.enabled:
+                recorder.add_new_facts(assistant_facts, "assistant response")
 
 if __name__ == "__main__":
     try:
