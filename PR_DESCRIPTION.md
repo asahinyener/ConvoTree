@@ -14,6 +14,8 @@ This PR adds a conversation-aware sequential compression feature to ConvoTree, w
 - Added a terminal-based chat interface (terminal_chat.py) for interactive testing
 - Added chat session recording functionality to save conversations and KG snapshots
 - Implemented actual OpenAI API integration for terminal chat responses and fact extraction
+- Enhanced KG to extract facts from both user queries and assistant responses
+- Added specialized fact extraction for user queries to capture implied knowledge
 - Added CORS headers to allow iframe embedding
 - Updated .gitignore to exclude the .env file
 - Added .env.example file to help users set up their API keys
@@ -41,4 +43,7 @@ N/A
 - The application now uses the GPT-5 model for both compression and conversation resumption
 - Sequential compression ensures the KG stays up-to-date with the latest conversation context
 - The terminal chat interface uses the OpenAI API for both responses and fact extraction
+- Specialized fact extraction for user queries captures implied knowledge and context
+- Facts are extracted from both user queries and assistant responses
 - Fallback mechanisms are in place for when the API is unavailable
+- The knowledge graph is continuously updated with each exchange, making the conversation more coherent
