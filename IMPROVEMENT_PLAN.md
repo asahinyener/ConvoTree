@@ -69,6 +69,7 @@ Based on the analysis of the current implementation, this document outlines a pl
 - [x] Create comprehensive test cases for different conversation scenarios
 - [x] Implement metrics for KG quality and conversation coherence
 - [x] Add example chat recordings with analysis
+- [x] Create mock implementation for testing without API calls
 - [ ] Add logging for KG updates and conversation state changes
 - [ ] Refine parameters based on test results
 - [ ] Document best practices for conversation-aware KG usage
