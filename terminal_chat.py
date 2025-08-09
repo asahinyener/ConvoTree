@@ -11,6 +11,7 @@ import sys
 import datetime
 from typing import List, Dict, Any
 from dotenv import load_dotenv
+from openai import OpenAI
 
 # Load environment variables from .env file
 load_dotenv()
@@ -87,9 +88,63 @@ class KnowledgeGraph:
             "Bill Evans played piano on Kind of Blue"
         ]
         self.sequential_mode = True
+        self.client = None
+        
+        # Initialize OpenAI client if API key is available
+        api_key = os.getenv("OPENAI_API_KEY")
+        if api_key:
+            self.client = OpenAI(api_key=api_key)
     
     def extract_facts(self, message: str) -> List[str]:
-        """Extract potential facts from a message."""
+        """Extract potential facts from a message using OpenAI API."""
+        # If no API key or client, use fallback extraction
+        if not self.client:
+            return self._fallback_extract_facts(message)
+        
+        try:
+            # Create prompt for fact extraction
+            prompt = f"""Extract 3-5 factual statements from the following text. 
+Focus on jazz-related facts, musicians, albums, and musical concepts.
+Return ONLY a numbered list of facts, one per line, with no additional text.
+
+Text: {message}
+
+Facts:"""
+            
+            # Call the OpenAI API
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You extract factual statements from text."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=150,
+                temperature=0.3
+            )
+            
+            # Process the response
+            facts_text = response.choices[0].message.content.strip()
+            
+            # Parse the numbered list
+            new_facts = []
+            for line in facts_text.split('\n'):
+                # Remove numbering and any extra spaces
+                line = line.strip()
+                if line:
+                    # Remove numbering (e.g., "1. ", "1) ", etc.)
+                    if '. ' in line[:4] or ') ' in line[:4]:
+                        line = line[line.find(' ')+1:]
+                    new_facts.append(line)
+            
+            return new_facts
+            
+        except Exception as e:
+            print(f"\nError extracting facts with API: {e}")
+            # Fall back to rule-based extraction if API fails
+            return self._fallback_extract_facts(message)
+    
+    def _fallback_extract_facts(self, message: str) -> List[str]:
+        """Fallback method for fact extraction when API is unavailable."""
         new_facts = []
         
         # Simple rule-based fact extraction
@@ -158,65 +213,66 @@ class KnowledgeGraph:
         mode = "ENABLED" if self.sequential_mode else "DISABLED"
         print(f"\n>>> Sequential compression {mode} <<<\n")
 
-# Assistant response generation
+# Assistant response generation using OpenAI API
 def generate_response(user_input: str, kg: KnowledgeGraph) -> str:
-    """Generate a response based on the user input and knowledge graph."""
-    user_input = user_input.lower()
+    """Generate a response based on the user input and knowledge graph using OpenAI API."""
+    # Get API key from environment
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return "Error: OpenAI API key not found. Please set the OPENAI_API_KEY environment variable."
     
-    # Simple rule-based responses
-    if "hello" in user_input or "hi" in user_input or "hey" in user_input:
-        return "Hello! I'm your jazz conversation assistant. How can I help you today?"
+    try:
+        # Initialize OpenAI client
+        client = OpenAI(api_key=api_key)
+        
+        # Prepare knowledge graph facts as context
+        kg_facts = kg.facts
+        kg_context = "\n".join([f"- {fact}" for fact in kg_facts])
+        
+        # Create the system message with knowledge graph context
+        system_message = f"""You are a helpful assistant with knowledge about jazz music. 
+The following facts have been extracted from the conversation so far:
+
+{kg_context}
+
+Please use this knowledge to answer the user's question. If you don't know the answer based on the provided facts, 
+acknowledge that you're not sure but try to be helpful by suggesting related topics you can discuss.
+Keep your responses concise (1-3 sentences)."""
+        
+        # Call the OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Using a more widely available model
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_input}
+            ],
+            max_tokens=150,
+            temperature=0.7
+        )
+        
+        # Extract and return the response text
+        return response.choices[0].message.content.strip()
     
-    if "bye" in user_input or "goodbye" in user_input:
-        return "Goodbye! It was nice chatting with you about jazz."
-    
-    if "thank" in user_input:
-        return "You're welcome! Is there anything else you'd like to know about jazz?"
-    
-    # Miles Davis related queries
-    if "miles davis" in user_input:
-        if "who" in user_input:
-            return "Miles Davis was a legendary jazz trumpeter and composer born on May 26, 1926. He was one of the most influential figures in the history of jazz and 20th-century music."
-        
-        if "album" in user_input or "record" in user_input:
-            return "Miles Davis recorded many influential albums throughout his career. Some of his most notable albums include 'Kind of Blue', 'Birth of the Cool', 'Milestones', 'Sketches of Spain', 'E.S.P.', 'In a Silent Way', and 'Bitches Brew' which pioneered jazz fusion."
-        
-        if "play" in user_input or "musician" in user_input or "band" in user_input:
-            return "Miles Davis collaborated with many talented musicians throughout his career. On 'Kind of Blue', he worked with Bill Evans, John Coltrane, Cannonball Adderley, Paul Chambers, and Jimmy Cobb. His 'Second Great Quintet' included Wayne Shorter, Herbie Hancock, Ron Carter, and Tony Williams."
-        
-        return "Miles Davis was a pioneering jazz musician who constantly evolved his style throughout his career, from bebop to cool jazz to modal jazz to fusion."
-    
-    # Kind of Blue related queries
-    if "kind of blue" in user_input:
-        if "pianist" in user_input or "piano" in user_input:
-            return "Bill Evans played piano on most tracks of 'Kind of Blue', with Wynton Kelly playing on 'Freddie Freeloader'."
-        
-        if "record" in user_input or "when" in user_input:
-            return "'Kind of Blue' was recorded in 1959 and is considered one of the greatest jazz albums of all time."
-        
-        if "musician" in user_input or "play" in user_input:
-            return "The musicians on 'Kind of Blue' were Miles Davis (trumpet), John Coltrane (tenor saxophone), Cannonball Adderley (alto saxophone), Bill Evans (piano), Wynton Kelly (piano on 'Freddie Freeloader'), Paul Chambers (bass), and Jimmy Cobb (drums)."
-        
-        return "'Kind of Blue' is considered one of the most influential jazz albums of all time and is known for its use of modal jazz."
-    
-    # Jazz related queries
-    if "jazz" in user_input:
-        if "what" in user_input and "is" in user_input:
-            return "Jazz is a music genre that originated in the African-American communities of New Orleans in the late 19th and early 20th centuries. It's characterized by swing and blue notes, complex chords, call and response vocals, polyrhythms, and improvisation."
-        
-        if "history" in user_input:
-            return "Jazz has a rich history that evolved from ragtime and blues in the early 20th century. It developed through various styles including Dixieland, swing, bebop, cool jazz, hard bop, modal jazz, free jazz, and fusion."
-        
-        return "Jazz is a diverse and rich musical tradition with many subgenres and influential artists throughout its history."
-    
-    # Default response
-    return "I'm not sure about that. Would you like to know more about Miles Davis, his albums like 'Kind of Blue', or jazz in general?"
+    except Exception as e:
+        print(f"\nError calling OpenAI API: {e}")
+        # Fallback response if API call fails
+        return "I apologize, but I encountered an error when trying to generate a response. Please check your API key and internet connection."
 
 def main():
     print("\n=== ConvoTree Terminal Chat ===")
     print("Type 'exit' to quit, 'kg' to view the knowledge graph, or 'toggle' to toggle sequential compression")
     print("Type 'record' to start recording, 'stop' to stop recording")
     print("Sequential compression is ENABLED by default\n")
+    
+    # Check for API key
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        print("WARNING: No OpenAI API key found in environment variables.")
+        print("Please set your API key in a .env file or as an environment variable:")
+        print("  echo 'OPENAI_API_KEY=\"your_api_key_here\"' > .env\n")
+        print("Continuing with fallback mode (rule-based responses)...\n")
+    else:
+        print("OpenAI API key found. Using API for responses and fact extraction.\n")
     
     # Initialize knowledge graph and recorder
     kg = KnowledgeGraph()
