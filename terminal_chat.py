@@ -2,11 +2,13 @@
 """
 Terminal-based chat interface for ConvoTree with sequential compression.
 This script provides a simple CLI for interacting with the sequential compression feature.
+Includes recording functionality to save chat sessions.
 """
 
 import json
 import os
 import sys
+import datetime
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 
@@ -20,6 +22,60 @@ initial_conversation = [
     {"role": "user", "content": "Who is the pianist in Miles Davis' Kind of Blue?"},
     {"role": "assistant", "content": "That would be Bill Evans on most tracks."},
 ]
+
+# Recording functionality
+class ChatRecorder:
+    def __init__(self, enabled=False):
+        self.enabled = enabled
+        self.transcript = []
+        self.filename = f"chat_recording_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    
+    def start(self):
+        """Start recording the chat session."""
+        self.enabled = True
+        self.transcript = []
+        self.transcript.append(f"=== ConvoTree Chat Session Recording ===")
+        self.transcript.append(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.transcript.append(f"Recording started\n")
+        print(f"\n>>> Recording started. Output will be saved to {self.filename} <<<\n")
+    
+    def stop(self):
+        """Stop recording and save the transcript."""
+        if not self.enabled:
+            return
+        
+        self.enabled = False
+        self.transcript.append(f"\nRecording ended: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        with open(self.filename, "w") as f:
+            f.write("\n".join(self.transcript))
+        
+        print(f"\n>>> Recording stopped. Saved to {self.filename} <<<\n")
+    
+    def add_message(self, role, content):
+        """Add a message to the transcript."""
+        if not self.enabled:
+            return
+        
+        prefix = "User: " if role == "user" else "Assistant: "
+        self.transcript.append(f"{prefix}{content}")
+    
+    def add_kg_snapshot(self, facts):
+        """Add a knowledge graph snapshot to the transcript."""
+        if not self.enabled:
+            return
+        
+        self.transcript.append("\n=== Knowledge Graph ===")
+        for i, fact in enumerate(facts, 1):
+            self.transcript.append(f"{i}. {fact}")
+        self.transcript.append("=====================\n")
+    
+    def add_system_message(self, message):
+        """Add a system message to the transcript."""
+        if not self.enabled:
+            return
+        
+        self.transcript.append(f"\n>>> {message} <<<\n")
 
 # Knowledge Graph simulation
 class KnowledgeGraph:
@@ -159,10 +215,12 @@ def generate_response(user_input: str, kg: KnowledgeGraph) -> str:
 def main():
     print("\n=== ConvoTree Terminal Chat ===")
     print("Type 'exit' to quit, 'kg' to view the knowledge graph, or 'toggle' to toggle sequential compression")
+    print("Type 'record' to start recording, 'stop' to stop recording")
     print("Sequential compression is ENABLED by default\n")
     
-    # Initialize knowledge graph
+    # Initialize knowledge graph and recorder
     kg = KnowledgeGraph()
+    recorder = ChatRecorder()
     
     # Display initial knowledge graph
     kg.display()
@@ -174,20 +232,46 @@ def main():
         
         # Check for special commands
         if user_input.lower() == 'exit':
+            if recorder.enabled:
+                recorder.stop()
             print("Goodbye!")
             break
         
         if user_input.lower() == 'kg':
             kg.display()
+            if recorder.enabled:
+                recorder.add_kg_snapshot(kg.facts)
             continue
         
         if user_input.lower() == 'toggle':
-            kg.toggle_mode()
+            mode = kg.toggle_mode()
+            status = "ENABLED" if mode else "DISABLED"
+            print(f"\n>>> Sequential compression {status} <<<\n")
+            if recorder.enabled:
+                recorder.add_system_message(f"Sequential compression {status}")
             continue
+        
+        if user_input.lower() == 'record':
+            recorder.start()
+            # Add initial KG snapshot to recording
+            recorder.add_kg_snapshot(kg.facts)
+            continue
+        
+        if user_input.lower() == 'stop':
+            recorder.stop()
+            continue
+        
+        # Add user message to recording
+        if recorder.enabled:
+            recorder.add_message("user", user_input)
         
         # Generate response
         response = generate_response(user_input, kg)
         print(f"Assistant: {response}")
+        
+        # Add assistant response to recording
+        if recorder.enabled:
+            recorder.add_message("assistant", response)
         
         # Update knowledge graph if sequential compression is enabled
         kg.update(user_input)
