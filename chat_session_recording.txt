@@ -1,0 +1,83 @@
+=== ConvoTree Chat Session Recording ===
+Date: 2025-08-09 01:41:20
+Sequential compression is ENABLED by default
+
+=== Initial Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+=====================
+
+User: Hello, I'm interested in learning about jazz music.
+Assistant: Hello! I'm your jazz conversation assistant. How can I help you today?
+User: Tell me about Miles Davis.
+Assistant: Miles Davis was a pioneering jazz musician who constantly evolved his style throughout his career, from bebop to cool jazz to modal jazz to fusion.
+User requested knowledge graph:
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+5. The conversation involves jazz music
+6. Miles Davis is being discussed
+=====================
+
+User: What albums did he record?
+Assistant: Miles Davis recorded many influential albums throughout his career. Some of his most notable albums include 'Kind of Blue', 'Birth of the Cool', 'Milestones', 'Sketches of Spain', 'E.S.P.', 'In a Silent Way', and 'Bitches Brew' which pioneered jazz fusion.
+User requested knowledge graph:
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+5. The conversation involves jazz music
+6. Miles Davis is being discussed
+7. Birth of the Cool is an album by Miles Davis
+8. Bitches Brew is an album by Miles Davis
+9. Sketches of Spain is an album by Miles Davis
+10. In a Silent Way is an album by Miles Davis
+=====================
+
+User toggled sequential compression: DISABLED
+
+User: Who played on Bitches Brew?
+Assistant: I'm not sure about that. Would you like to know more about Miles Davis, his albums like 'Kind of Blue', or jazz in general?
+User requested knowledge graph:
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+5. The conversation involves jazz music
+6. Miles Davis is being discussed
+7. Birth of the Cool is an album by Miles Davis
+8. Bitches Brew is an album by Miles Davis
+9. Sketches of Spain is an album by Miles Davis
+10. In a Silent Way is an album by Miles Davis
+=====================
+
+User toggled sequential compression: ENABLED
+
+User: Who played on Bitches Brew?
+Assistant: Miles Davis collaborated with many talented musicians throughout his career. On 'Bitches Brew', he worked with Wayne Shorter, Chick Corea, and John McLaughlin. On 'Birth of the Cool', he worked with Gil Evans and Gerry Mulligan. His 'Second Great Quintet' included Wayne Shorter, Herbie Hancock, Ron Carter, and Tony Williams.
+User requested knowledge graph:
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+5. The conversation involves jazz music
+6. Miles Davis is being discussed
+7. Birth of the Cool is an album by Miles Davis
+8. Bitches Brew is an album by Miles Davis
+9. Sketches of Spain is an album by Miles Davis
+10. In a Silent Way is an album by Miles Davis
+11. Wayne Shorter collaborated with Miles Davis
+12. Herbie Hancock played piano with Miles Davis
+13. Tony Williams was a drummer who played with Miles Davis
+14. Chick Corea played with Miles Davis on Bitches Brew
+15. John McLaughlin played guitar on Bitches Brew
+=====================
+
+User exited the chat.

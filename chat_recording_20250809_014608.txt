@@ -1,0 +1,95 @@
+=== ConvoTree Chat Session Recording ===
+Date: 2025-08-09 01:46:33
+Recording started
+
+
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+=====================
+
+User: Tell me about John Coltrane
+Assistant: I'm not sure about that. Would you like to know more about Miles Davis, his albums like 'Kind of Blue', or jazz in general?
+
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+5. John Coltrane played saxophone
+6. The conversation involves jazz music
+7. Miles Davis is being discussed
+=====================
+
+User: Did John Coltrane play with Miles Davis?
+Assistant: Miles Davis collaborated with many talented musicians throughout his career. On 'Kind of Blue', he worked with Bill Evans, John Coltrane, Cannonball Adderley, Paul Chambers, and Jimmy Cobb. His 'Second Great Quintet' included Wayne Shorter, Herbie Hancock, Ron Carter, and Tony Williams.
+
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+5. John Coltrane played saxophone
+6. The conversation involves jazz music
+7. Miles Davis is being discussed
+8. Bill Evans was a pianist
+9. Cannonball Adderley played saxophone
+10. Wayne Shorter collaborated with Miles Davis
+11. Herbie Hancock played piano with Miles Davis
+12. Tony Williams was a drummer who played with Miles Davis
+=====================
+
+
+>>> Sequential compression DISABLED <<<
+
+User: What albums did John Coltrane record as a leader?
+Assistant: I'm not sure about that. Would you like to know more about Miles Davis, his albums like 'Kind of Blue', or jazz in general?
+
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+5. John Coltrane played saxophone
+6. The conversation involves jazz music
+7. Miles Davis is being discussed
+8. Bill Evans was a pianist
+9. Cannonball Adderley played saxophone
+10. Wayne Shorter collaborated with Miles Davis
+11. Herbie Hancock played piano with Miles Davis
+12. Tony Williams was a drummer who played with Miles Davis
+=====================
+
+
+>>> Sequential compression DISABLED <<<
+
+
+>>> Sequential compression DISABLED <<<
+
+
+>>> Sequential compression DISABLED <<<
+
+User: What albums did John Coltrane record as a leader?
+Assistant: I'm not sure about that. Would you like to know more about Miles Davis, his albums like 'Kind of Blue', or jazz in general?
+User: Tell me about A Love Supreme
+Assistant: I'm not sure about that. Would you like to know more about Miles Davis, his albums like 'Kind of Blue', or jazz in general?
+
+=== Knowledge Graph ===
+1. Julia likes jazz music
+2. The conversation discusses Miles Davis
+3. Kind of Blue is an album by Miles Davis
+4. Bill Evans played piano on Kind of Blue
+5. John Coltrane played saxophone
+6. The conversation involves jazz music
+7. Miles Davis is being discussed
+8. Bill Evans was a pianist
+9. Cannonball Adderley played saxophone
+10. Wayne Shorter collaborated with Miles Davis
+11. Herbie Hancock played piano with Miles Davis
+12. Tony Williams was a drummer who played with Miles Davis
+=====================
+
+
+Recording ended: 2025-08-09 01:49:22
