@@ -10,6 +10,8 @@ A conversation compression and knowledge graph tool that extracts structured kno
 - Resume conversations with context from the KG
 - Sequential compression for continuous KG updates
 - Interactive web interface for testing
+- Terminal-based chat interface for quick testing
+- Chat session recording for analysis and debugging
 
 ## Sequential Compression
 
@@ -66,6 +68,18 @@ To use sequential compression, set the `sequential_compression` parameter to `tr
    ```
    python test_sequential_compression.py
    ```
+
+6. Use the terminal-based chat interface:
+   ```
+   python terminal_chat.py
+   ```
+   
+   Commands in terminal chat:
+   - `kg` - View the current knowledge graph
+   - `toggle` - Toggle sequential compression on/off
+   - `record` - Start recording the chat session
+   - `stop` - Stop recording and save the transcript
+   - `exit` - Exit the chat
 
 Note: The application uses the GPT-5 model for both compression and conversation resumption.
 
