@@ -39,35 +39,36 @@ Based on the analysis of the current implementation, this document outlines a pl
 
 ### Phase 1: KG Structure and Entity Normalization
 - [x] Create this improvement plan
-- [ ] Implement EntityNormalizer class for consistent entity naming
-- [ ] Modify normalize_triple function to standardize triple format
-- [ ] Update normalize_kg function to deduplicate and clean triples
-- [ ] Enhance draw_kg function for better visualization
+- [x] Implement EntityNormalizer class for consistent entity naming
+- [x] Modify normalize_triple function to standardize triple format
+- [x] Update normalize_kg function to deduplicate and clean triples
+- [x] Enhance draw_kg function for better visualization
 
 ### Phase 2: Knowledge Retention and Prioritization
-- [ ] Implement KnowledgePrioritizer class to rank facts by importance
-- [ ] Add recency and relevance scoring for KG triples
+- [x] Implement KnowledgePrioritizer class to rank facts by importance
+- [x] Add recency and relevance scoring for KG triples
 - [ ] Modify compress_chat to preserve important knowledge
-- [ ] Add confidence scores for KG triples
+- [x] Add confidence scores for KG triples
 - [ ] Implement hierarchical knowledge representation
 
 ### Phase 3: Conversation Context Tracking
-- [ ] Add ConversationStateTracker class
-- [ ] Implement topic detection and tracking
-- [ ] Modify generate_response to maintain conversation context
-- [ ] Add explicit context references in assistant responses
-- [ ] Enhance sequential compression to prioritize current context
+- [x] Add conversation topic tracking to TerminalChat class
+- [x] Implement topic detection and tracking
+- [x] Modify generate_response to maintain conversation context
+- [x] Add explicit context references in assistant responses
+- [x] Enhance sequential compression to prioritize current context
 
 ### Phase 4: Response Generation Improvements
-- [ ] Modify resume_chat to better utilize KG information
-- [ ] Add explicit KG fact references in responses
+- [x] Modify resume_chat to better utilize KG information
+- [x] Add explicit KG fact references in responses
 - [ ] Implement response templates based on conversation state
 - [ ] Add follow-up question generation based on KG
 - [ ] Enhance fallback mechanisms with KG awareness
 
 ### Phase 5: Testing and Refinement
-- [ ] Create comprehensive test cases for different conversation scenarios
-- [ ] Implement metrics for KG quality and conversation coherence
+- [x] Create comprehensive test cases for different conversation scenarios
+- [x] Implement metrics for KG quality and conversation coherence
+- [x] Add example chat recordings with analysis
 - [ ] Add logging for KG updates and conversation state changes
 - [ ] Refine parameters based on test results
 - [ ] Document best practices for conversation-aware KG usage
