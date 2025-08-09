@@ -428,7 +428,63 @@ class TerminalChat:
     
     def compress(self):
         """Compress the conversation into a knowledge graph."""
-        self.bundle = compress_chat(self.messages)
+        # If we already have a bundle with a KG, preserve it
+        if self.sequential_mode and self.bundle and self.bundle.get("kg"):
+            # Get existing KG
+            existing_kg = self.bundle.get("kg", [])
+            
+            # Normalize existing KG
+            normalized_existing_kg = normalize_kg(existing_kg)
+            
+            # Compress only the new messages since last compression
+            if hasattr(self, '_last_compressed_index') and self._last_compressed_index < len(self.messages):
+                new_messages = self.messages[self._last_compressed_index:]
+                new_bundle = compress_chat(new_messages)
+                new_kg = new_bundle.get("kg", [])
+                
+                # Normalize new KG
+                normalized_new_kg = normalize_kg(new_kg)
+                
+                # Merge KGs, prioritizing by relevance to current topic
+                if self.current_topic:
+                    # Prioritize existing KG
+                    prioritized_existing = self.prioritizer.prioritize_kg(
+                        normalized_existing_kg, 
+                        current_topic=self.current_topic,
+                        max_triples=len(normalized_existing_kg)  # Keep all triples but prioritized
+                    )
+                    
+                    # Merge with new KG
+                    merged_kg = prioritized_existing + normalized_new_kg
+                    
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    unique_kg = []
+                    for triple in merged_kg:
+                        if triple not in seen:
+                            seen.add(triple)
+                            unique_kg.append(triple)
+                    
+                    # Update bundle with merged KG
+                    self.bundle = new_bundle
+                    self.bundle["kg"] = unique_kg
+                else:
+                    # If no current topic, just append new KG to existing
+                    merged_kg = normalized_existing_kg + normalized_new_kg
+                    
+                    # Remove duplicates
+                    self.bundle = new_bundle
+                    self.bundle["kg"] = list(set(merged_kg))
+            else:
+                # First compression or full recompression
+                self.bundle = compress_chat(self.messages)
+        else:
+            # No existing KG or not in sequential mode, compress all messages
+            self.bundle = compress_chat(self.messages)
+        
+        # Store the index of the last message that was compressed
+        self._last_compressed_index = len(self.messages)
+        
         return self.bundle
     
     def generate_response(self, user_input: str) -> str:
