@@ -1,0 +1,294 @@
+ i need to know more information about the election in australia in 2013, especially how expected it was that Tony Abbot wins, can you try to find data and news on that (so polls, expectations and then the actual outcome)? here are additional contextual information. 
+important sentence: He was elected leader of the Liberals (by one vote) by virtue of his opposition to then leader Malcolm Turnbull’s willingness to negotiate an ETS with the Rudd Labor government.
+
+Research context: 
+
+ The CPMemerged from a political compromise between the Labor government, the Greens, and independents, supported by climate economists (e.g., the Garnaut Review) and interna tional obligations under the Kyoto Protocol. However, the scheme quickly became a focal point of political opposition. Criticism centered on its alleged economic burden and perceived viola tion of a campaign promise by then-Prime Minister Julia Gillard. Public discontent, amplified by rising electricity prices and lobbying from carbon-intensive industries, helped the opposition leader Tony Abbott win the 2013 election on a platform to “Axe the Tax.” On July 17, 2014, the CPM was repealed and replaced by the Emissions Reduction Fund under the “Direct Action Plan,” marking a shift from market-based to government-subsidized emissions reductions. This made Australia the first country to legislate and then dismantle a national carbon pricing scheme
+
+research hypothesis 4:  Expectations of repeal (e.g., following the 2013 election) already affect in novation—before the formal repeal in 2014. Policy uncertainty and anticipation may influence firm behaviour prior to the actual policy change.
+
+find data and news, polls, expectations and the actual outcomes
+
+
+
+
+ChatGPT said:
+
+1m 18s boyunca düşündüm
+1. How Tony Abbott got to the 2013 starting-line
+Abbott became Liberal leader on 1 December 2009, defeating Malcolm Turnbull by a single vote (42-41) in a spill triggered by Turnbull’s readiness to negotiate Labor’s emissions-trading scheme (ETS). His first act was to campaign against the “great big new tax on everything.” 
+abc.net.au
+
+2. What the polls said in the long run (2010-mid-2013)
+*From early 2010 onward the Coalition held a steady two-party-preferred (TPP) lead, typically 52–58 %. A snapshot of Newspoll’s 2013 tracking shows Labor stuck in the low-30s on the primary vote and trailing 42–58 TPP as late as 3 June 2013—a margin big enough to wipe out 35 Labor seats on a uniform swing. 
+abc.net.au
+
+3. Short-lived “Rudd bounce,” then expectations of a Coalition win
+*Kevin Rudd’s return to the prime-ministership in late June narrowed the gap, but by 23 August (two weeks out) a Nielsen poll already had Labor back to 47-53 TPP and losing Rudd’s own seat on internal polling. 
+abc.net.au
+
+*Betting markets moved in lock-step with the polls: on 23 August Sportsbet and Centrebet implied only a 12 % chance of a Labor win, and by 30 August the implied Coalition probability was ≈92 %—levels “never seen in a federal contest.” 
+theguardian.com
+theguardian.com
+
+*Sportsbet was so confident it paid out A$1.5 million to Coalition backers a week before polling day. 
+apnews.com
+
+4. Final-week national polls versus election-day reality
+Pollster	Field dates (Sep 2013)	Coalition TPP	Labor TPP
+Newspoll	3–5	54	46
+Nielsen	4–5	54	46
+Galaxy	2–4	53	47
+ReachTEL	4	53	47
+Essential (rolling)	1–4	52	48
+Morgan (multi-mode)	4–6	54.5	44.5
+Actual result	7 (election day)	53.49	46.51
+
+Poll data: 
+en.wikipedia.org
+ Actual result: 
+en.wikipedia.org
+
+5. Election night & exit-polls
+*Early evening exit polls for Sky News/Newspoll projected ≈97 Coalition seats, signalling a decisive victory before the count was far advanced. 
+theguardian.com
+
+*By midnight the Australian Electoral Commission confirmed a Coalition landslide—90 of 150 seats, 53.5 % TPP—almost exactly in line with the final-week polling average. 
+en.wikipedia.org
+
+6. How “expected” was Abbott’s victory? — a synthesis
+Consistency across indicators – opinion-poll averages, betting odds, internal seat polling and even pre-poll payouts converged on a Coalition win.
+
+Accuracy – National TPP polling in the final week was never more than 1.5 percentage points away from the 53.49 % Abbott actually recorded.
+
+Seat projections matched reality – the midpoint of public models (about 90 seats) proved correct, reinforcing the idea that the outcome was highly predictable.
+
+Policy salience – Abbott’s signature “Axe the Tax” message on carbon pricing dominated the campaign narrative, so firms and investors could plausibly price-in repeal risk well before the formal 2014 abolition, consistent with your research hypothesis on anticipatory effects.
+
+Bottom line: By the time Australians voted on 7 September 2013, Tony Abbott’s victory was not a surprise but the most widely anticipated federal result in decades; every mainstream metric—polls, punditry, betting markets and exit polls—pointed to a comfortable Coalition majority, and they were proven almost exactly right.
+
+
+
+
+
+
+
+
+
+
+
+
+Sources
+You said:
+i need more information on the expectations on this win. find me different sources on how expected it was
+
+
+ChatGPT said:
+
+1m 37s boyunca düşündüm
+Below is a grab-bag of independent signals—polling, betting markets, analysts and real-time journalism—showing that a Coalition victory was overwhelmingly priced-in well before polling day on 7 September 2013. I’ve grouped them so you can see how widely the expectation was shared.
+
+1 . National opinion polls
+Date (2013)	Pollster / Story	2-party-preferred (Coalition : Labor)	Take-away
+3 June	ABC News coverage of Newspoll	58 : 42 – “electoral wipe-out” forecast; 35 Labor seats at risk 
+abc.net.au
+Collapse under Gillard; analysts already modelling big swings.
+19 Aug	ABC News Newspoll story	54 : 46 – Rudd bounce has faded; Labor primary vote record low 34 % 
+abc.net.au
+Mid-campaign polls still predict clear Coalition majority.
+1 Sep (6 days out)	ABC News Newspoll summary	54 : 46 – Lead “retained”, Coalition ahead in preferred-PM for first time 
+abc.net.au
+Final-week tracking never moves out of the mid-50s to the Coalition.
+
+Averaged across all major pollsters (Newspoll, Nielsen, Galaxy, Essential) the final-week mean was 53.5 %, within one point of the actual 53.49 %. The consistency itself reinforced the sense of inevitability.
+
+2 . Betting & prediction markets
+Date	Source	Implied chance of Abbott win	Notes
+30 Aug	Guardian analysis of Centrebet & Sportsbet prices	≈ 92 % (odds 1.03) – “prices I’ve never seen in national politics” 
+theguardian.com
+29 Aug	Reuters bulletin	Sportsbet pays out A$1.5 m early; seat market tips 90 of 150 seats to Coalition 
+jp.reuters.com
+30 Aug	AP wire & RNZ replay	Same early payout; agency says race “already over” 
+apnews.com
+rnz.co.nz
+5 Sep	SmartCompany column	“Bookies have 90 %+ confidence Abbott has achieved his lifelong ambition” 
+smartcompany.com.au
+
+Unlike polls, bookmakers forfeit cash if they’re wrong, so the early-payout stunt became its own news peg, amplifying expectations.
+
+3 . Main-stream media framing
+*“Tony Abbott poised for victory in Australia elections” – Guardian, 4 Sep 
+theguardian.com
+
+Reuters, 4 Sep: Coalition “appears to be a shoo-in … all the talk has been of the challenges he faces after he wins.” 
+reuters.com
+
+Reuters, 16 Aug: Coalition “tipped to win next month’s election,” still up 52-48 even after Rudd’s return. 
+reuters.com
+
+ABC (The Drum), 8 Aug: betting odds show the Coalition “on track for a long-expected election victory.” 
+abc.net.au
+
+The language is strikingly uniform—“poised,” “shoo-in,” “inevitable,” “long-expected”—and it appears in both domestic and international outlets.
+
+4 . Psephology & seat models
+Simon Jackman (Stanford/USyd, 30 Aug): seat-by-seat betting model “has never fancied Labor’s chances”; markets pricing a 4-5 pp swing and 17-seat loss. 
+theguardian.com
+
+Antony Green (ABC): his publicly-available Election Calculator invited users to apply national swings of 4-6 pp against Labor months before the campaign even began. 
+abc.net.au
+
+These models translated national numbers into seat tallies of ~90 Coalition seats—almost exactly the result delivered on the night.
+
+5 . Putting it together
+Indicator	Signal before 7 Sep
+National polls	53-55 % Coalition TPP for 10+ weeks
+Betting odds	≥90 % probability; early payout
+Media rhetoric	“landslide”, “wipe-out”, “shoo-in”
+Seat models	~90 of 150 seats to Coalition
+
+Every independent metric—pollsters, pundits, quant models, bookmakers—converged on the same story: Abbott was expected to win comfortably, and the only debate was over the margin. That near-certainty is precisely the kind of anticipatory signal your hypothesis 4 relies on: firms, lobbyists and investors had weeks (arguably months) to adjust behaviour in the expectation that the carbon price would be repealed once the Coalition took office.
+
+
+
+
+
+
+
+
+
+
+
+
+Sources
+You said:
+now find different newspaper articles that refer to rollbacks all over the world, and include additional visual resouces that show the global rollbacks of policies
+
+
+ChatGPT said:
+
+1m 42s boyunca düşündüm
+Climate‑Policy Rollbacks By Continent (Illustrative Sample)
+
+
+
+
+
+Sample Of Global Climate‑Policy Rollbacks
+
+
+
+2m 50s boyunca düşündüm
+
+
+
+
+
+
+
+
+How (and where) climate-policy rollbacks have happened
+Region	Country / jurisdiction	Roll-back measure (headline)	Newspaper coverage
+Oceania	Australia	Repeal of the 2012 Carbon-Pricing Mechanism (2014)	The Guardian — “Australia kills off carbon tax” 
+theguardian.com
+North America	Canada (Ontario)	Cap-and-Trade Cancellation Act 2018 ends provincial carbon market	The Guardian — “Doug Ford scraps carbon-tax plan” 
+theguardian.com
+United States	>100 federal climate & clean-air rules weakened during 2017-20, incl. Clean Power Plan replacement	Washington Post retrospective on 125 roll-backs 
+washingtonpost.com
+ / Reuters ACE rule story 
+reuters.com
+Europe	France	2019 fuel-tax hike scrapped after Yellow-Vest protests	France 24 live coverage of the suspension 
+france24.com
+ / Guardian follow-up 
+theguardian.com
+United Kingdom	Ban on new petrol-/diesel-car sales pushed back to 2035 (from 2030)	Reuters: “Britain delays ban …” 
+reuters.com
+Germany	Boiler-ban bill watered-down & climate-fund subsidies frozen (2023)	The Guardian: subsidy freeze threatens heat-pump rollout 
+theguardian.com
+ / Reuters on “watered-down heating law” 
+reuters.com
+Latin America	Brazil	Executive orders transferring Amazon reserve powers to agribusiness ministry (2019)	The Guardian: “Bolsonaro launches assault …” 
+theguardian.com
+Mexico	Energy-market overhaul strengthening Pemex & CFE, deterring renewables (2020- )	Reuters Senate passage report 
+reuters.com
+
+Take-aways
+
+Not isolated: Rollbacks have surfaced on every inhabited continent, triggered by electoral change (Australia, Ontario), civil unrest (France), or executive ideology (U.S., Brazil, Mexico).
+
+Carbon pricing is especially vulnerable. Since 2014 three jurisdictions (Australia, Ontario, Washington State 2016 referendum) have scrapped or rejected carbon markets outright.
+
+Polls & protests matter. France’s retreat followed approval ratings that collapsed to 23 % and weeks of violent demonstrations, echoing how Australian opinion turned against the “carbon tax” after power-bill spikes.
+
+Business expectation effects: In each case, repeal signals preceded the legal act—Abbott’s 2013 “Axe the Tax” win, Ford’s 2018 campaign, Sunak’s July 2023 policy speech—giving firms months to throttle or redirect low-carbon investment, consistent with your hypothesis about anticipatory impacts.
+
+Extra visual context
+Maps (first carousel images) show where carbon-pricing instruments exist today. The blank or grey areas highlight where pricing was repealed (Australia, Ontario) or never adopted, providing visual context for the rollbacks.
+
+Inside Climate News graphic (last image in carousel) quantifies the greenhouse-gas impact of just five major U.S. federal rollbacks—an estimated 1.8 – 2.1 Gt CO₂e by 2035.
+
+Fresh visuals generated for you
+The bar chart below tallies an illustrative set of major rollbacks by continent since 2014, while the interactive table lets you sort by year, country or policy type. Both are yours to download or screenshot for presentations.
+
+(If the chart/table hasn’t rendered yet, scroll once—they’re embedded right above this text.)
+
+Need deeper dives?
+
+Seat-by-seat political precursors (e.g., Brazil’s agribusiness bloc voting patterns).
+
+Sector-level investment reactions (heat-pump orders in Germany, renewable PPAs in Ontario).
+
+Cross-country counter-examples where pricing survived (e.g., British Columbia, South Africa).
+
+Just let me know which angle would help your research most!
+
+
+
+
+
+
+
+
+
+
+
+
+Sources
+You said:
+no i need sources that talk about the global rollbacks alltogether. referring to the rollbacks collectively, and discussing the amount of rollbacks happening all around the world 
+
+
+ChatGPT said:
+
+2m 1s boyunca düşündüm
+
+
+
+
+
+
+
+
+“Green-lash” in the headlines – sources that treat multiple roll-backs as a single, global trend
+Year	Outlet	Headline / focus	Why it’s useful
+2023	The Economist	“The global backlash against climate policies has begun”	Landmark article that strings together Australia’s carbon-tax repeal, Trump-era U.S. deregulation, French fuel-tax riots, Germany’s heating-law revolt and Dutch farmer protests to argue that a world-wide push-back is under way. 
+economist.com
+2025	Reuters – Sustainable Switch (newsletter)	“Climate rule rollbacks in US and EU”	Presents U.S. power-plant deregulation and the EU’s ‘simplification omnibus’ in the same story, framing them as part of “significant climate-law roll-backs on both sides of the Atlantic.” 
+reuters.com
+2025	The Guardian	“EU rollback on environmental policy is gaining momentum, warn campaigners”	Although EU-centred, the piece explicitly calls the deregulation drive “part of a broader global back-sliding in climate policy, echoing roll-backs in the U.S. and UK.” 
+theguardian.com
+2023	Reuters special report	“‘Greenlash’ fuels fears for Europe’s environmental ambitions”	Uses the term greenlash and quotes analysts who see a “backlash to green policies spreading across advanced economies” and threatening global investment flows. 
+reuters.com
+2024	The Guardian – Comment	“Despite 2024’s ‘greenlash’, the fight against climate breakdown can still succeed”	Opinion column that surveys anti-net-zero protests in multiple countries (France, Germany, UK, Netherlands) and warns of a continent-wide roll-back contagion. 
+theguardian.com
+2024	Financial Times	“The great climate disconnect”	Explores how a rising electorate-level backlash is forcing governments from Ottawa to London to dilute net-zero pledges; dubs the phenomenon a “world-wide green backlash.” (Pay-walled but widely cited.) 
+ft.com
+
+Tip: each article pulls together several national episodes—exactly what you asked for—so they can be quoted as evidence that investors, NGOs and journalists were treating roll-backs as a global wave rather than isolated events.
+
+How the visuals help
+Map carousel above – four independent world-maps (World Bank, Bloomberg/World Bank, FactsonClimate, Visual Capitalist) show where carbon-pricing or other climate instruments are absent or repealed (grey) versus active (green/blue). Use them to illustrate territorial gaps that widened after repeals in Australia (2014), Ontario (2018) and New Zealand agriculture (2025 draft law).
+
+Interactive bar-chart & table (scroll up) – my earlier figure tallies high-profile roll-backs by continent since 2014; the sortable table lists the policy and year for quick reference.
+
+Together, the articles give you narrative proof of a world-wide rollback trend, while the visuals supply an at-a-glance view of where policy coverage has thinned out. Let me know if you’d like deeper dives on any region or a time-series of how many roll-backs occur each year.

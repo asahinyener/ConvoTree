@@ -1,0 +1,11 @@
+[
+    {"role": "user",      "content": "Hi, I’m Julia and I love jazz."},
+    {"role": "assistant", "content": "Hello Julia! What can I do for you today?"},
+    {"role": "user",      "content": "Who is the pianist in Miles Davis’ Kind of Blue?"},
+    {"role": "assistant", "content": "That would be Bill Evans on most tracks."},
+    {"role": "user",      "content": "Cool, add that to my notes please."},
+    {"role": "assistant", "content": "Noted!"},
+    {"role": "user",      "content": "Thanks, bye!"},
+    {"role": "assistant", "content": "Good-bye!"}
+  ]
+  
