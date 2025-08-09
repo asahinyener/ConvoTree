@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration
-PORT = os.getenv("PORT", "12000")
+PORT = os.getenv("PORT", "12001")
 BASE_URL = f"http://localhost:{PORT}"
 
 def main():

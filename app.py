@@ -100,7 +100,6 @@ def build_resume_prompt(kg: List[str], ds: Dict[str, Any]) -> str:
 def compress_chat(messages: List[Dict[str, str]]) -> Dict[str, Any]:
     resp = client.chat.completions.create(
         model=GPT_MODEL,
-        temperature=0.0,
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -114,7 +113,6 @@ def resume_chat(bundle: Dict[str, Any], next_user: str) -> Dict[str, str]:
     prompt = build_resume_prompt(bundle.get("kg", []), bundle.get("ds", {}))
     resp = client.chat.completions.create(
         model=GPT_MODEL,
-        temperature=0.0,
         messages=[
             {"role": "system", "content": prompt},
             {"role": "user", "content": next_user},
