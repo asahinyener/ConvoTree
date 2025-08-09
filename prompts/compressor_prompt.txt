@@ -6,13 +6,16 @@ Return one JSON object:
  "kg": ["E1|rel|E2", …], # triples – facts only
  "ds": {...}, # flat JSON: info required for next reply
  "links": [{"ds":"<key>","kg":["E1",…]}, …], # ds↔kg mapping
- "trace": ["0|user|Hi, I’m…", "1|assistant|Hello!", …], # ordered terse gists of every turn
+ "trace": ["0|user|Hi, I'm…", "1|assistant|Hello!", …], # ordered terse gists of every turn
  "dp": "…" # prose prompt for a fresh LLM
 }
 Rules
 - Never echo transcript verbatim; gists ≤ 25 tokens each, yet sufficient to rebuild sense.
 - On every run, append new turns to trace and update kg/ds/links.
+- When sequential compression is enabled, the KG is updated with each new exchange in the conversation.
 - If the next user message equals "EXPAND", the assistant must reconstruct the dialogue by converting trace into readable
 turns (user/assistant/system/tool) and then continue normally.
 - Otherwise answer the user, respecting kg + ds.
 - Deduplicate nodes, no invented facts, total output ≤ 2 000 tokens.
+- When updating the KG, ensure consistency with previous facts and avoid contradictions.
+- Prioritize important facts that are relevant to the ongoing conversation.
