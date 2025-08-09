@@ -1,0 +1,11 @@
+Artificial Intelligence (AI) is a branch of computer science that aims to create systems capable of performing tasks that would normally require human intelligence. These tasks include learning, reasoning, problem-solving, perception, and language understanding.
+
+Machine learning is a subset of AI that focuses on the development of algorithms that can learn from and make predictions based on data. Deep learning, a subset of machine learning, uses neural networks with many layers (hence "deep") to analyze various factors of data.
+
+Neural networks are computing systems inspired by the biological neural networks that constitute animal brains. They can learn to perform tasks by considering examples, generally without being programmed with task-specific rules.
+
+AI systems can be classified as either weak AI or strong AI. Weak AI, also known as narrow AI, is designed to perform a narrow task (e.g., facial recognition). Strong AI, also known as artificial general intelligence (AGI), is a theoretical form of AI where a machine would have an intelligence equal to humans, with the ability to learn any intellectual task that a human being can do.
+
+The field of AI research was founded at a workshop held on the campus of Dartmouth College in the summer of 1956. The attendees, including John McCarthy, Marvin Minsky, Allen Newell, and Herbert Simon, became the leaders of AI research for many decades.
+
+Today, AI is used in many applications such as virtual assistants (like Siri and Alexa), recommendation systems (like those used by Netflix and Amazon), autonomous vehicles, and in healthcare for disease diagnosis and drug discovery.
