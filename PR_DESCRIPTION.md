@@ -19,6 +19,10 @@ This PR adds a conversation-aware sequential compression feature to ConvoTree, w
 - Added terminal_chat_kg.py that uses the same KG structure as app.py for consistency
 - Added support for general content beyond the jazz demo in terminal_chat_kg.py
 - Added KG visualization with NetworkX and Matplotlib in terminal_chat_kg.py
+- Added file loading capability to terminal_chat_kg.py to initialize from text files
+- Added intelligent conversation format detection for loaded files
+- Added command-line arguments to specify input file and model
+- Added sample files for testing (conversation and article formats)
 - Added CORS headers to allow iframe embedding
 - Updated .gitignore to exclude the .env file
 - Added .env.example file to help users set up their API keys
@@ -32,6 +36,8 @@ This PR adds a conversation-aware sequential compression feature to ConvoTree, w
 6. For CLI testing without API calls: `python cli_test.py`
 7. For interactive terminal testing with jazz demo: `python terminal_chat.py`
 8. For interactive terminal testing with app.py KG integration: `python terminal_chat_kg.py`
+9. To initialize from a text file: `python terminal_chat_kg.py --file sample_article.txt`
+10. To specify a different model: `python terminal_chat_kg.py --model gpt-4o-mini`
 
 ## Terminal Chat Commands
 - `kg` - View the current knowledge graph
@@ -55,3 +61,6 @@ N/A
 - terminal_chat_kg.py uses the same KG structure as app.py (triples with subject|predicate|object format)
 - terminal_chat_kg.py can handle any user-pasted content, not just jazz-related topics
 - KG visualization is available in terminal_chat_kg.py using NetworkX and Matplotlib
+- File loading capability allows initializing the KG from any text file (articles, conversations, etc.)
+- Intelligent format detection tries to parse conversation structure or treats content as a single message
+- Command-line arguments provide flexibility for different use cases and models
