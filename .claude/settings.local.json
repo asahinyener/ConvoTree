@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python test:*)",
+      "Bash(pip install:*)",
+      "Bash(chmod:*)",
+      "Bash(python:*)",
+      "Bash(pkill:*)",
+      "Bash(source .env)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
