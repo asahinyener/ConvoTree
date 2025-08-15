@@ -14,7 +14,7 @@ from dataclasses import dataclass, asdict
 from datetime import datetime, timedelta
 from functools import lru_cache
 import threading
-from persistent_kg import PersistentKG, ConversationTurn, KnowledgeTriple
+from .persistent_kg import PersistentKG, ConversationTurn, KnowledgeTriple
 
 class CachedKnowledgeGraph(PersistentKG):
     """Enhanced Knowledge Graph with intelligent caching for performance"""

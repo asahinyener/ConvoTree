@@ -12,7 +12,7 @@ import dotenv
 # Load environment variables
 dotenv.load_dotenv()
 
-from enhanced_chat import EnhancedChatSystem
+from ..core.chat.enhanced_chat import EnhancedChatSystem
 
 def run_interactive_demo():
     """Run interactive demo session"""

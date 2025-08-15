@@ -13,8 +13,8 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
-from enhanced_chat import EnhancedChatSystem, ConversationManager
-from persistent_kg import PersistentKG
+from ..core.chat.enhanced_chat import EnhancedChatSystem, ConversationManager
+from ..core.memory.persistent_kg import PersistentKG
 import rich
 from rich.console import Console
 from rich.table import Table

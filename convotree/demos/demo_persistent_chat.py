@@ -5,7 +5,7 @@ Demonstrates context preservation across conversation turns
 """
 
 import json
-from enhanced_chat import create_conversation, continue_conversation
+from ..core.chat.enhanced_chat import create_conversation, continue_conversation
 
 def demo_conversation():
     """Demonstrate the persistent KG chat system"""

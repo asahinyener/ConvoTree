@@ -18,8 +18,8 @@ from pathlib import Path
 from typing import List, Dict, Any, Tuple
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from persistent_kg import PersistentKG, ConversationTurn, KnowledgeTriple
-from enhanced_chat import EnhancedChatSystem, ConversationManager
+from ..core.memory.persistent_kg import PersistentKG, ConversationTurn, KnowledgeTriple
+from ..core.chat.enhanced_chat import EnhancedChatSystem, ConversationManager
 from unittest.mock import Mock, patch
 
 def test_database_creation():

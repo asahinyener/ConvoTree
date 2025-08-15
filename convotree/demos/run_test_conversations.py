@@ -15,7 +15,7 @@ import dotenv
 # Load environment variables
 dotenv.load_dotenv()
 
-from enhanced_chat import EnhancedChatSystem, ConversationManager
+from ..core.chat.enhanced_chat import EnhancedChatSystem, ConversationManager
 
 class AutomatedTestRunner:
     """Runs automated test conversations and records detailed metrics"""

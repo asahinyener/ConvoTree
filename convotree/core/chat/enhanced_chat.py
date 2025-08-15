@@ -9,7 +9,7 @@ import os
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from openai import OpenAI
-from persistent_kg import PersistentKG
+from ..memory.persistent_kg import PersistentKG
 
 class EnhancedChatSystem:
     """Chat system with persistent knowledge graph memory"""

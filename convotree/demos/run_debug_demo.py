@@ -7,7 +7,7 @@ Shows CLI debug commands and capabilities
 from dotenv import load_dotenv
 load_dotenv()
 
-from enhanced_chat import EnhancedChatSystem, ConversationManager
+from ..core.chat.enhanced_chat import EnhancedChatSystem, ConversationManager
 from chat_cli import ConvoTreeCLI
 import os
 

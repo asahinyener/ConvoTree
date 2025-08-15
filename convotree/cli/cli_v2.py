@@ -11,10 +11,10 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from enhanced_chat_v2 import EnhancedChatSystemV2, ConversationManagerV2
-from config_manager import ConfigManager, ConvoTreeConfig
-from error_handler import ConvoTreeErrorHandler, handle_error, with_error_handling
-from onboarding_system import OnboardingSystem
+from ..core.chat.enhanced_chat_v2 import EnhancedChatSystemV2, ConversationManagerV2
+from ..core.config.config_manager import ConfigManager, ConvoTreeConfig
+from ..utils.error_handler import ConvoTreeErrorHandler, handle_error, with_error_handling
+from ..utils.onboarding_system import OnboardingSystem
 import rich
 from rich.console import Console
 from rich.table import Table
@@ -109,6 +109,7 @@ class ConvoTreeCLIV2:
         self.session_start = datetime.now()
         self.command_count = 0
         self.message_count = 0
+        self.last_debug_info = None
         
         if self.config.ui.debug_mode:
             self.console.print(f"🚀 ConvoTree CLI v2.0 initialized")
@@ -168,6 +169,49 @@ Type your message or use a command starting with `/`
             border_style="cyan"
         )
         self.console.print(panel)
+    
+    def _get_user_input(self):
+        """Get user input with proper prompt"""
+        return input(f"\n{self.conversation_id}> ").strip()
+    
+    def _handle_chat_message(self, message: str):
+        """Handle regular chat messages with v2.0 enhancements"""
+        start_time = datetime.now()
+        
+        with self.console.status("[bold green]💭 Thinking...", spinner="dots"):
+            try:
+                # Process message through the enhanced chat system v2
+                result = self.chat.process_message(message)
+                
+                end_time = datetime.now()
+                response_time = (end_time - start_time).total_seconds()
+                
+                # Store debug info for later inspection
+                if result.get('debug_info'):
+                    self.last_debug_info = result['debug_info']
+                
+                # Display the response
+                response_panel = Panel(
+                    result['response'],
+                    title="[bold green]💬 ConvoTree[/bold green]",
+                    border_style="green"
+                )
+                self.console.print(response_panel)
+                
+                # Show context info
+                if self.config.ui.debug_mode:
+                    self._show_context_info(result)
+                
+                # Show performance info
+                if self.config.ui.verbose_logging:
+                    self._show_performance_info(result)
+                    
+            except Exception as e:
+                error_info = self.error_handler.handle_error(e, {
+                    "message": message,
+                    "conversation_id": self.conversation_id
+                })
+                self.console.print(f"[red]💥 {error_info.user_message}[/red]")
     
     def _main_chat_loop(self):
         """Enhanced main chat loop with error handling"""
@@ -681,15 +725,96 @@ Thanks for using ConvoTree! Your conversation is safely stored. 🌳
     
     # Implement remaining command methods (simplified versions of existing ones)
     def _cmd_exit(self, args): sys.exit(0)
-    def _cmd_status(self, args): pass  # Implement similar to original
-    def _cmd_history(self, args): pass  # Implement similar to original
-    def _cmd_knowledge(self, args): pass  # Implement similar to original
+    def _cmd_status(self, args):
+        """Show conversation status"""
+        try:
+            summary = self.chat.kg.get_conversation_summary()
+            
+            status_info = f"""
+**Conversation ID:** `{self.conversation_id}`
+**Turn Count:** `{summary['turn_count']}`
+**Knowledge Triples:** `{summary['knowledge_triples']}`
+**First Turn:** `{summary.get('first_turn', 'N/A')}`
+**Last Turn:** `{summary.get('last_turn', 'N/A')}`
+**Session Duration:** `{str(datetime.now() - self.session_start).split('.')[0]}`
+**Database:** `{self.config.database.path}`
+**Debug Mode:** `{'Enabled' if self.config.ui.debug_mode else 'Disabled'}`
+            """
+            
+            panel = Panel(
+                Markdown(status_info),
+                title="[bold blue]📊 Conversation Status[/bold blue]",
+                border_style="blue"
+            )
+            self.console.print(panel)
+            
+        except Exception as e:
+            self.console.print(f"[red]Error getting status: {e}[/red]")
+    def _cmd_history(self, args):
+        """Show conversation history"""
+        try:
+            limit = int(args[0]) if args and args[0].isdigit() else 20
+            history = self.chat.get_conversation_history(limit)
+            
+            if not history:
+                self.console.print("[yellow]📜 No conversation history found[/yellow]")
+                return
+            
+            history_table = Table(title=f"📜 Conversation History (Last {len(history)} turns)")
+            history_table.add_column("Time", style="dim")
+            history_table.add_column("Role", style="cyan")
+            history_table.add_column("Content", style="white", max_width=60)
+            
+            for turn in reversed(history):  # Show most recent first
+                timestamp = turn.get('timestamp', '')[:19]  # Remove microseconds
+                role = turn.get('role', 'unknown').capitalize()
+                content = turn.get('content', '')[:100] + ('...' if len(turn.get('content', '')) > 100 else '')
+                
+                history_table.add_row(timestamp, role, content)
+            
+            self.console.print(history_table)
+            
+        except Exception as e:
+            self.console.print(f"[red]Error getting history: {e}[/red]")
+    def _cmd_knowledge(self, args):
+        """Show knowledge graph facts"""
+        try:
+            limit = int(args[0]) if args and args[0].isdigit() else 20
+            facts = self.chat.kg._get_recent_knowledge(limit)
+            
+            if not facts:
+                self.console.print("[yellow]🧠 No knowledge facts found[/yellow]")
+                return
+            
+            knowledge_table = Table(title=f"🧠 Knowledge Graph Facts (Last {len(facts)})")
+            knowledge_table.add_column("Fact", style="green")
+            
+            for fact in facts:
+                knowledge_table.add_row(fact)
+            
+            self.console.print(knowledge_table)
+            
+        except Exception as e:
+            self.console.print(f"[red]Error getting knowledge: {e}[/red]")
     def _cmd_context(self, args): pass  # Implement similar to original
     def _cmd_search(self, args): pass  # Implement similar to original
     def _cmd_analyze(self, args): pass  # Implement similar to original
     def _cmd_stats(self, args): pass  # Implement similar to original
     def _cmd_debug(self, args): pass  # Implement similar to original
-    def _cmd_toggle_debug_mode(self, args): pass  # Implement similar to original
+    def _cmd_toggle_debug_mode(self, args):
+        """Toggle debug mode on/off"""
+        try:
+            self.config.ui.debug_mode = not self.config.ui.debug_mode
+            self.chat.debug_mode = self.config.ui.debug_mode
+            
+            status = "enabled" if self.config.ui.debug_mode else "disabled"
+            emoji = "🔍" if self.config.ui.debug_mode else "🙈"
+            color = "green" if self.config.ui.debug_mode else "yellow"
+            
+            self.console.print(f"[{color}]{emoji} Debug mode {status}[/{color}]")
+            
+        except Exception as e:
+            self.console.print(f"[red]Error toggling debug mode: {e}[/red]")
     def _cmd_debug_llm(self, args): pass  # Implement similar to original
     def _cmd_semantic_test(self, args): pass  # Implement similar to original
     def _cmd_benchmark(self, args): pass  # Implement similar to original
@@ -701,7 +826,7 @@ Thanks for using ConvoTree! Your conversation is safely stored. 🌳
     def _cmd_delete_conversation(self, args): pass  # Implement similar to original
     def _cmd_clear(self, args): os.system('clear' if os.name == 'posix' else 'cls')
 
-def main():
+def main(conversation_id=None, config_path=None, debug=False):
     """Enhanced main function with configuration and error handling"""
     try:
         # Load environment variables
@@ -713,7 +838,34 @@ def main():
     except ImportError:
         pass
     
-    # Parse arguments
+    try:
+        # Load configuration
+        config_manager = ConfigManager(config_path)
+        config = config_manager.load_config()
+        
+        # Override debug mode if specified
+        if debug:
+            config.ui.debug_mode = True
+        
+        # Create and start CLI
+        cli = ConvoTreeCLIV2(
+            conversation_id=conversation_id,
+            config=config
+        )
+        cli.start_chat()
+        
+    except KeyboardInterrupt:
+        print("\n👋 Goodbye!")
+    except Exception as e:
+        print(f"❌ Fatal error: {e}")
+        if debug:
+            import traceback
+            traceback.print_exc()
+
+def main_standalone():
+    """Standalone main function with argument parsing for direct execution"""
+    import argparse
+    
     parser = argparse.ArgumentParser(description="ConvoTree CLI v2.0 - Enhanced Persistent AI Chat")
     parser.add_argument("--conversation-id", "-c", type=str, help="Conversation ID to use or resume")
     parser.add_argument("--config", type=str, help="Configuration file path")
@@ -725,30 +877,12 @@ def main():
     if args.version:
         print("ConvoTree v2.0 - Enhanced Persistent AI Chat")
         return
-    
-    try:
-        # Load configuration
-        config_manager = ConfigManager(args.config)
-        config = config_manager.load_config()
         
-        # Override debug mode if specified
-        if args.debug:
-            config.ui.debug_mode = True
-        
-        # Create and start CLI
-        cli = ConvoTreeCLIV2(
-            conversation_id=args.conversation_id,
-            config=config
-        )
-        cli.start_chat()
-        
-    except KeyboardInterrupt:
-        print("\n👋 Goodbye!")
-    except Exception as e:
-        print(f"❌ Fatal error: {e}")
-        if args.debug:
-            import traceback
-            traceback.print_exc()
+    main(
+        conversation_id=args.conversation_id,
+        config_path=args.config,
+        debug=args.debug
+    )
 
 if __name__ == "__main__":
-    main()
+    main_standalone()

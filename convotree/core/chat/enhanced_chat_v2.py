@@ -10,7 +10,7 @@ import time
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from openai import OpenAI
-from cached_knowledge_graph import CachedKnowledgeGraph
+from ..memory.cached_knowledge_graph import CachedKnowledgeGraph
 
 class EnhancedChatSystemV2:
     """Next-generation chat system with performance optimizations"""

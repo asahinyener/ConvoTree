@@ -40,7 +40,7 @@ def test_caching_performance():
     print("\n🚀 Testing Caching Performance...")
     
     try:
-        from cached_knowledge_graph import CachedKnowledgeGraph
+        from ..core.memory.cached_knowledge_graph import CachedKnowledgeGraph
         
         # Create test instance
         test_env = setup_test_environment()
@@ -95,7 +95,7 @@ def test_error_handling():
     print("\n🛡️ Testing Error Handling...")
     
     try:
-        from error_handler import ConvoTreeErrorHandler, ErrorCategory, ErrorSeverity
+        from ..utils.error_handler import ConvoTreeErrorHandler, ErrorCategory, ErrorSeverity
         
         # Create error handler
         error_handler = ConvoTreeErrorHandler(debug_mode=True)
@@ -135,7 +135,7 @@ def test_configuration_system():
     print("\n⚙️ Testing Configuration System...")
     
     try:
-        from config_manager import ConfigManager, ConvoTreeConfig
+        from ..core.config.config_manager import ConfigManager, ConvoTreeConfig
         
         # Test default configuration
         config_manager = ConfigManager()
@@ -183,8 +183,8 @@ def test_enhanced_chat_system():
     print("\n💬 Testing Enhanced Chat System...")
     
     try:
-        from enhanced_chat_v2 import EnhancedChatSystemV2
-        from config_manager import ConvoTreeConfig, ModelConfig, CacheConfig, DatabaseConfig, UIConfig, SecurityConfig
+        from ..core.chat.enhanced_chat_v2 import EnhancedChatSystemV2
+        from ..core.config.config_manager import ConvoTreeConfig, ModelConfig, CacheConfig, DatabaseConfig, UIConfig, SecurityConfig
         
         # Create test environment
         test_env = setup_test_environment()
@@ -252,7 +252,7 @@ def test_onboarding_system():
     print("\n🎓 Testing Onboarding System...")
     
     try:
-        from onboarding_system import OnboardingSystem
+        from ..utils.onboarding_system import OnboardingSystem
         from rich.console import Console
         
         # Create test console and onboarding system
@@ -295,9 +295,9 @@ def test_integration():
     print("\n🔗 Testing System Integration...")
     
     try:
-        from enhanced_chat_v2 import ConversationManagerV2
-        from config_manager import ConfigManager
-        from error_handler import get_error_handler
+        from ..core.chat.enhanced_chat_v2 import ConversationManagerV2
+        from ..core.config.config_manager import ConfigManager
+        from ..utils.error_handler import get_error_handler
         
         # Test environment
         test_env = setup_test_environment()
@@ -348,8 +348,8 @@ def run_performance_benchmark():
     print("\n📊 Running Performance Benchmarks...")
     
     try:
-        from enhanced_chat_v2 import EnhancedChatSystemV2
-        from cached_knowledge_graph import CachedKnowledgeGraph
+        from ..core.chat.enhanced_chat_v2 import EnhancedChatSystemV2
+        from ..core.memory.cached_knowledge_graph import CachedKnowledgeGraph
         
         test_env = setup_test_environment()
         if not test_env:

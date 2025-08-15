@@ -7,7 +7,7 @@ Shows that raw chat history is NOT passed directly to the LLM
 from dotenv import load_dotenv
 load_dotenv()
 
-from enhanced_chat import EnhancedChatSystem
+from ..core.chat.enhanced_chat import EnhancedChatSystem
 import json
 
 def test_context_ephemerality():

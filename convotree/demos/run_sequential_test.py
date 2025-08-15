@@ -15,7 +15,7 @@ import dotenv
 # Load environment variables
 dotenv.load_dotenv()
 
-from enhanced_chat import EnhancedChatSystem
+from ..core.chat.enhanced_chat import EnhancedChatSystem
 
 class SequentialTestRunner:
     """Runs test conversations sequentially with separate databases"""

@@ -47,7 +47,7 @@ def main():
     
     # Start the CLI
     print("🌳 Starting ConvoTree CLI...")
-    from chat_cli import main as cli_main
+    from .chat_cli import main as cli_main
     cli_main()
 
 if __name__ == "__main__":
