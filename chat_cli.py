@@ -31,11 +31,12 @@ matplotlib.use('Agg')  # Non-interactive backend
 class ConvoTreeCLI:
     """Interactive CLI for ConvoTree with semantic testing capabilities"""
     
-    def __init__(self, conversation_id: str = None, db_path: str = "conversations.db"):
+    def __init__(self, conversation_id: str = None, db_path: str = "conversations.db", debug_mode: bool = False):
         self.console = Console()
         self.conversation_id = conversation_id or f"cli_session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         self.db_path = db_path
-        self.conversation_manager = ConversationManager()
+        self.debug_mode = debug_mode
+        self.conversation_manager = ConversationManager(db_path, debug_mode)
         self.chat = self.conversation_manager.get_conversation(self.conversation_id)
         
         # Command history for terminal
@@ -75,6 +76,8 @@ class ConvoTreeCLI:
             '/test': self._cmd_semantic_test,
             '/benchmark': self._cmd_benchmark,
             '/debug': self._cmd_debug,
+            '/debug-llm': self._cmd_debug_llm,
+            '/debug-mode': self._cmd_toggle_debug_mode,
             '/record': self._cmd_record,
             '/stop': self._cmd_stop_recording,
             '/replay': self._cmd_replay_recording
@@ -221,6 +224,10 @@ Type your message to start chatting, or use commands starting with `/`
                     except Exception as recording_error:
                         self.console.print(f"[dim red]Recording error: {recording_error}[/dim red]")
                 
+                # Store debug info for later inspection
+                if result.get('debug_info'):
+                    self.last_debug_info = result['debug_info']
+                
                 # Display the response
                 response_panel = Panel(
                     result['response'],
@@ -236,6 +243,10 @@ Type your message to start chatting, or use commands starting with `/`
                         f"[dim]💡 Used {context_info['relevant_facts_count']} knowledge facts, "
                         f"{context_info['recent_turns_count']} recent turns[/dim]"
                     )
+                
+                # Show debug mode indicator
+                if self.debug_mode:
+                    self.console.print(f"[dim cyan]🔍 Debug mode active - Use /debug-llm to see LLM input details[/dim cyan]")
                 
                 # Show recording indicator
                 if self.recording:
@@ -297,6 +308,8 @@ Type your message to start chatting, or use commands starting with `/`
             ("/test [type]", "Run semantic tests", "/test memory"),
             ("/benchmark", "Run performance benchmarks", "/benchmark"),
             ("/debug", "Show debug information", "/debug"),
+            ("/debug-mode", "Toggle debug mode on/off", "/debug-mode"),
+            ("/debug-llm", "Show last LLM input/output details", "/debug-llm"),
             ("/record [name]", "Start recording conversation", "/record test_session"),
             ("/stop", "Stop recording and save", "/stop"),
             ("/replay [file]", "Replay/analyze recording", "/replay recording_test.json")
@@ -1075,6 +1088,93 @@ Type your message to start chatting, or use commands starting with `/`
         except Exception as e:
             self.console.print(f"[red]Error getting debug info: {e}[/red]")
     
+    def _cmd_debug_llm(self, args: List[str]):
+        """Show what was sent to LLM in the last interaction"""
+        try:
+            # Get the last response debug info if available
+            if hasattr(self, 'last_debug_info') and self.last_debug_info:
+                debug_info = self.last_debug_info
+                
+                # Display system prompt
+                prompt_panel = Panel(
+                    debug_info.get("system_prompt", "No system prompt available"),
+                    title="[bold cyan]Last System Prompt Sent to LLM[/bold cyan]",
+                    border_style="cyan"
+                )
+                self.console.print(prompt_panel)
+                
+                # Display user message
+                user_msg_panel = Panel(
+                    debug_info.get("user_message", "No user message available"),
+                    title="[bold green]User Message[/bold green]",
+                    border_style="green"
+                )
+                self.console.print(user_msg_panel)
+                
+                # Display context breakdown
+                context_info = f"""
+**Context Summary:** {debug_info.get('context_summary', 'N/A')}
+**Relevant Facts:** {len(debug_info.get('relevant_facts', []))} facts
+**Recent Turns:** {len(debug_info.get('recent_turns', []))} turns
+**User Context Items:** {len(debug_info.get('user_context', {}))} items
+                """
+                
+                context_panel = Panel(
+                    Markdown(context_info),
+                    title="[bold yellow]Context Breakdown[/bold yellow]",
+                    border_style="yellow"
+                )
+                self.console.print(context_panel)
+                
+                # Show facts if any
+                if debug_info.get('relevant_facts'):
+                    facts_text = "\n".join([f"• {fact}" for fact in debug_info['relevant_facts'][:10]])
+                    if len(debug_info['relevant_facts']) > 10:
+                        facts_text += f"\n... and {len(debug_info['relevant_facts']) - 10} more facts"
+                    
+                    facts_panel = Panel(
+                        facts_text,
+                        title="[bold magenta]Relevant Facts Used[/bold magenta]",
+                        border_style="magenta"
+                    )
+                    self.console.print(facts_panel)
+                
+            else:
+                self.console.print("[yellow]No debug information available. Enable debug mode with /debug-mode and send a message.[/yellow]")
+                
+        except Exception as e:
+            self.console.print(f"[red]Error showing LLM debug info: {e}[/red]")
+    
+    def _cmd_toggle_debug_mode(self, args: List[str]):
+        """Toggle debug mode on/off"""
+        try:
+            # Toggle debug mode
+            self.debug_mode = not self.debug_mode
+            
+            # Update the conversation manager and chat system
+            self.conversation_manager.debug_mode = self.debug_mode
+            
+            # Update existing chat instance
+            if hasattr(self.chat, 'debug_mode'):
+                self.chat.debug_mode = self.debug_mode
+            
+            # Create new chat instance with debug mode (to ensure it's properly set)
+            self.chat = self.conversation_manager.get_conversation(self.conversation_id)
+            
+            status = "ON" if self.debug_mode else "OFF"
+            color = "green" if self.debug_mode else "red"
+            
+            self.console.print(f"[{color}]Debug mode turned {status}[/{color}]")
+            
+            if self.debug_mode:
+                self.console.print("[dim]Debug mode will show detailed LLM input/output for each message.[/dim]")
+                self.console.print("[dim]Use /debug-llm to see the last LLM interaction details.[/dim]")
+            else:
+                self.console.print("[dim]Debug mode disabled. Normal conversation mode.[/dim]")
+                
+        except Exception as e:
+            self.console.print(f"[red]Error toggling debug mode: {e}[/red]")
+    
     def _save_session_history(self):
         """Save session command history"""
         try:
@@ -1370,13 +1470,16 @@ def main():
                        help="Conversation ID to use or resume")
     parser.add_argument("--database", "-d", type=str, default="conversations.db",
                        help="Database file path")
+    parser.add_argument("--debug", action="store_true",
+                       help="Enable debug mode to show LLM input/output details")
     
     args = parser.parse_args()
     
     try:
         cli = ConvoTreeCLI(
             conversation_id=args.conversation_id,
-            db_path=args.database
+            db_path=args.database,
+            debug_mode=args.debug
         )
         cli.start_chat()
     except KeyboardInterrupt:

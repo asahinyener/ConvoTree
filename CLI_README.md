@@ -117,6 +117,8 @@ Interactive terminal chat interface with persistent knowledge graph and semantic
 | `/test <type>` | Run semantic test | `/test memory` |
 | `/benchmark` | Performance test | `/benchmark` |
 | `/debug` | Show debug info | `/debug` |
+| `/debug-mode` | Toggle debug mode | `/debug-mode` |
+| `/debug-llm` | Show LLM input/output | `/debug-llm` |
 | `/db <sql>` | Execute SQL query | `/db SELECT COUNT(*) FROM turns` |
 
 ### Visualization
@@ -125,6 +127,46 @@ Interactive terminal chat interface with persistent knowledge graph and semantic
 | `/visualize` | Create graph PNG | `/viz` |
 | `/export [format]` | Export data | `/export json` |
 | `/stats` | Detailed statistics | `/stats` |
+
+## Context Ephemerality & Debug Mode
+
+ConvoTree processes context through knowledge graph extraction instead of passing raw chat history to the LLM. Debug mode lets you verify this behavior.
+
+### Enable Debug Mode
+```bash
+# Start CLI with debug mode
+./run.sh --debug
+
+# Or toggle in existing session
+your_session> /debug-mode
+```
+
+### Debug Commands
+```bash
+/debug-mode    # Toggle debug mode on/off
+/debug-llm     # Show last LLM input/output details
+/debug         # Show system debug information
+```
+
+### What Debug Mode Shows
+- ✅ Exact system prompt sent to OpenAI
+- ✅ Context breakdown (facts, recent turns, user state)  
+- ✅ Knowledge extraction process
+- ✅ Proof that raw history isn't sent directly
+- ✅ Token usage and model details
+
+### Test Context Ephemerality
+```bash
+# Run automated test
+uv run python test_context_ephemerality.py
+
+# Manual testing with debug mode
+./run.sh --debug
+your_session> Hello, I'm a Python developer
+your_session> I work at TechCorp as a data scientist  
+your_session> What do you know about my background?
+your_session> /debug-llm
+```
 
 ## Semantic Testing
 

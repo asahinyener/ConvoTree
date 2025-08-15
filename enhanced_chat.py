@@ -14,9 +14,10 @@ from persistent_kg import PersistentKG
 class EnhancedChatSystem:
     """Chat system with persistent knowledge graph memory"""
     
-    def __init__(self, conversation_id: str, db_path: str = "conversations.db"):
+    def __init__(self, conversation_id: str, db_path: str = "conversations.db", debug_mode: bool = False):
         self.conversation_id = conversation_id
         self.kg = PersistentKG(conversation_id, db_path)
+        self.debug_mode = debug_mode
         
         # Validate API key
         api_key = os.getenv("OPENAI_API_KEY")
@@ -54,19 +55,29 @@ Continue the conversation naturally based on the user's new message.
     def process_message(self, user_message: str, role: str = "user") -> Dict[str, Any]:
         """Process a new message and generate response with full context"""
         
+        if self.debug_mode:
+            print(f"\n🔍 [DEBUG] Processing message: '{user_message[:100]}{'...' if len(user_message) > 100 else ''}'")
+        
         # Step 1: Add user message to knowledge graph
         user_turn_id = self.kg.add_turn(role, user_message)
+        if self.debug_mode:
+            print(f"📝 [DEBUG] Added user turn ID: {user_turn_id}")
         
         # Step 2: Get relevant context for this query
         context = self.kg.get_relevant_context(user_message)
+        if self.debug_mode:
+            print(f"🧠 [DEBUG] Context retrieved - Facts: {len(context.get('raw_facts', []))}, Recent turns: {len(context.get('recent_turns', []))}")
+            print(f"🔗 [DEBUG] Has synthesized context: {'synthesized' in context}")
         
         # Step 3: Generate contextual response
         response_data = self._generate_contextual_response(user_message, context)
         
         # Step 4: Add assistant response to knowledge graph
         assistant_turn_id = self.kg.add_turn("assistant", response_data["response"])
+        if self.debug_mode:
+            print(f"📝 [DEBUG] Added assistant turn ID: {assistant_turn_id}")
         
-        return {
+        result = {
             "response": response_data["response"],
             "conversation_id": self.conversation_id,
             "user_turn_id": user_turn_id,
@@ -76,8 +87,11 @@ Continue the conversation naturally based on the user's new message.
                 "recent_turns_count": len(context.get("recent_turns", [])),
                 "has_synthesized_context": "synthesized" in context
             },
-            "conversation_stats": self.kg.get_conversation_summary()
+            "conversation_stats": self.kg.get_conversation_summary(),
+            "debug_info": response_data.get("debug_info") if self.debug_mode else None
         }
+        
+        return result
     
     def _generate_contextual_response(self, user_message: str, context: Dict[str, Any]) -> Dict[str, str]:
         """Generate response using full conversation context"""
@@ -98,6 +112,46 @@ Continue the conversation naturally based on the user's new message.
             user_context=user_context or "{}"
         )
         
+        # Debug logging
+        debug_info = None
+        if self.debug_mode:
+            print(f"\n🎯 [DEBUG] === LLM INPUT DETAILS ===")
+            print(f"📊 Context Summary: {context_summary}")
+            print(f"💡 Relevant Facts ({len(synthesized.get('relevant_facts', context.get('raw_facts', [])))} facts):")
+            if relevant_facts and relevant_facts != "(no relevant facts found)":
+                for i, fact in enumerate(synthesized.get("relevant_facts", context.get("raw_facts", []))[:5], 1):
+                    print(f"   {i}. {fact}")
+                if len(synthesized.get("relevant_facts", context.get("raw_facts", []))) > 5:
+                    print(f"   ... and {len(synthesized.get('relevant_facts', context.get('raw_facts', []))) - 5} more")
+            else:
+                print("   (no relevant facts)")
+            
+            print(f"📝 Recent Context ({len(context.get('recent_turns', []))} turns):")
+            if recent_context and recent_context != "(no recent context)":
+                for turn in context.get("recent_turns", [])[:3]:
+                    print(f"   {turn['role']}: {turn['content'][:100]}{'...' if len(turn['content']) > 100 else ''}")
+            else:
+                print("   (no recent context)")
+            
+            print(f"👤 User Context: {user_context[:200]}{'...' if len(user_context) > 200 else ''}")
+            print(f"\n📤 [DEBUG] === FULL SYSTEM PROMPT SENT TO LLM ===")
+            print("=" * 80)
+            print(system_prompt)
+            print("=" * 80)
+            print(f"📤 [DEBUG] User message: {user_message}")
+            print("=" * 80)
+            
+            # Store debug info
+            debug_info = {
+                "context_summary": context_summary,
+                "relevant_facts": synthesized.get("relevant_facts", context.get("raw_facts", [])),
+                "recent_turns": context.get("recent_turns", []),
+                "user_context": synthesized.get("user_context", context.get("context_state", {})),
+                "system_prompt": system_prompt,
+                "user_message": user_message,
+                "raw_context": context
+            }
+        
         try:
             # Generate response with context
             response = self.client.chat.completions.create(
@@ -109,10 +163,26 @@ Continue the conversation naturally based on the user's new message.
                 ]
             )
             
-            return {"response": response.choices[0].message.content}
+            response_content = response.choices[0].message.content
+            
+            if self.debug_mode:
+                print(f"\n📥 [DEBUG] === LLM RESPONSE ===")
+                print(f"Response length: {len(response_content)} characters")
+                print(f"Model used: {response.model}")
+                print(f"Usage: {response.usage}")
+                print("=" * 50)
+            
+            result = {"response": response_content}
+            if debug_info:
+                result["debug_info"] = debug_info
+                
+            return result
             
         except Exception as e:
-            return {"response": f"I apologize, but I encountered an error processing your message: {str(e)}"}
+            error_msg = f"I apologize, but I encountered an error processing your message: {str(e)}"
+            if self.debug_mode:
+                print(f"❌ [DEBUG] OpenAI API Error: {e}")
+            return {"response": error_msg}
     
     def get_conversation_history(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Get formatted conversation history"""
@@ -134,14 +204,17 @@ Continue the conversation naturally based on the user's new message.
 class ConversationManager:
     """Manages multiple conversations and their persistent state"""
     
-    def __init__(self, db_path: str = "conversations.db"):
+    def __init__(self, db_path: str = "conversations.db", debug_mode: bool = False):
         self.active_conversations: Dict[str, EnhancedChatSystem] = {}
         self.db_path = db_path
+        self.debug_mode = debug_mode
     
     def get_conversation(self, conversation_id: str) -> EnhancedChatSystem:
         """Get or create a conversation instance"""
         if conversation_id not in self.active_conversations:
-            self.active_conversations[conversation_id] = EnhancedChatSystem(conversation_id, self.db_path)
+            self.active_conversations[conversation_id] = EnhancedChatSystem(
+                conversation_id, self.db_path, self.debug_mode
+            )
         return self.active_conversations[conversation_id]
     
     def send_message(self, conversation_id: str, message: str, role: str = "user") -> Dict[str, Any]:
