@@ -1,0 +1,26 @@
+{
+  "tutorial_steps": {
+    "welcome": {
+      "completed": true,
+      "completed_at": "2025-08-15T13:24:04.402927"
+    },
+    "basic_chat": {
+      "completed": true,
+      "completed_at": "2025-08-15T13:24:16.462164"
+    },
+    "knowledge_graph": {
+      "completed": true,
+      "completed_at": "2025-08-15T13:24:34.014720"
+    },
+    "debug_features": {
+      "completed": true,
+      "completed_at": "2025-08-15T13:24:48.667044"
+    },
+    "advanced_features": {
+      "completed": true,
+      "completed_at": "2025-08-15T13:25:03.411620"
+    }
+  },
+  "onboarding_complete": true,
+  "onboarding_completed_at": "2025-08-15T13:25:03.417268"
+}

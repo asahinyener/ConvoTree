@@ -1,1 +1,5 @@
 **static/**
+**.db**
+**report_*.json
+**.pyc
+.env

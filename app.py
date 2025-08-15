@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify, Response
 from openai import OpenAI
 import networkx as nx
 import matplotlib
+from enhanced_chat import ConversationManager, EnhancedChatSystem
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -27,12 +28,15 @@ SYSTEM_PROMPT = Path(PROMPT_PATH).read_text(encoding="utf-8")
 TEMPLATE_PATH = Path("prompts/resume_prompt.txt")
 if not TEMPLATE_PATH.exists():
     raise SystemExit(
-        "Missing prompts/resume_promt.txt – please create it before running the server."
+        "Missing prompts/resume_prompt.txt – please create it before running the server."
     )
 
 # Everything for a single run lives inside static/runs/<timestamp>/
 BASE_RUNS_DIR = Path(app.static_folder) / "runs"
 BASE_RUNS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Initialize conversation manager for persistent KG approach
+conversation_manager = ConversationManager()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers – KG visual + resume prompt
@@ -138,6 +142,9 @@ def index() -> Response:
         "<li><code>/compress</code> – POST JSON list (or {'messages':[ ... ]})</li>"
         "<li><code>/compress_txt</code> – POST plain/text (copy-paste transcript)</li>"
         "<li><code>/resume</code> – POST {bundle_path, next_user}</li>"
+        "<li><code>/chat</code> – POST {conversation_id, message} – Persistent KG chat</li>"
+        "<li><code>/conversation/{id}/history</code> – GET conversation history</li>"
+        "<li><code>/conversation/{id}/export</code> – GET conversation data export</li>"
         "</ul>"
     )
     return Response(html, mimetype="text/html")
@@ -223,6 +230,84 @@ def public_payload(paths: Dict[str, Path]):
         "resume_prompt_path": str(paths["resume_txt"].relative_to(app.static_folder)),
         "kg_image": f"/static/{paths['kg_png'].relative_to(app.static_folder)}",
     }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Persistent KG Chat Routes
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route("/chat", methods=["POST"])
+def persistent_chat():
+    """Enhanced chat with persistent knowledge graph"""
+    data = request.get_json(force=True, silent=True)
+    if not data:
+        return jsonify({"error": "No JSON body provided"}), 400
+    
+    conversation_id = data.get("conversation_id")
+    message = data.get("message", "").strip()
+    
+    if not conversation_id or not message:
+        return jsonify({"error": "Both conversation_id and message are required"}), 400
+    
+    try:
+        result = conversation_manager.send_message(conversation_id, message)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": f"Chat processing failed: {str(e)}"}), 500
+
+
+@app.route("/conversation/<conversation_id>/history", methods=["GET"])
+def get_conversation_history(conversation_id: str):
+    """Get conversation history"""
+    try:
+        chat = conversation_manager.get_conversation(conversation_id)
+        limit = request.args.get("limit", 20, type=int)
+        history = chat.get_conversation_history(limit)
+        
+        return jsonify({
+            "conversation_id": conversation_id,
+            "history": history,
+            "total_turns": len(history)
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to get history: {str(e)}"}), 500
+
+
+@app.route("/conversation/<conversation_id>/export", methods=["GET"])
+def export_conversation(conversation_id: str):
+    """Export complete conversation data"""
+    try:
+        chat = conversation_manager.get_conversation(conversation_id)
+        export_data = chat.export_conversation_data()
+        
+        return jsonify(export_data)
+    except Exception as e:
+        return jsonify({"error": f"Export failed: {str(e)}"}), 500
+
+
+@app.route("/conversation/<conversation_id>/summary", methods=["GET"])
+def get_conversation_summary(conversation_id: str):
+    """Get conversation summary and statistics"""
+    try:
+        chat = conversation_manager.get_conversation(conversation_id)
+        summary = chat.kg.get_conversation_summary()
+        
+        return jsonify(summary)
+    except Exception as e:
+        return jsonify({"error": f"Failed to get summary: {str(e)}"}), 500
+
+
+@app.route("/conversations", methods=["GET"])
+def list_conversations():
+    """List all active conversations"""
+    try:
+        conversations = conversation_manager.list_conversations()
+        return jsonify({
+            "active_conversations": conversations,
+            "count": len(conversations)
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to list conversations: {str(e)}"}), 500
 
 
 # ─────────────────────────────────────────────────────────────────────────────
