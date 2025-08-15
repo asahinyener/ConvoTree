@@ -6,9 +6,15 @@
       "Bash(chmod:*)",
       "Bash(python:*)",
       "Bash(pkill:*)",
-      "Bash(source .env)"
+      "Bash(source .env)",
+      "Bash(uv run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "defaultMode": "acceptEdits"
   }
 }
