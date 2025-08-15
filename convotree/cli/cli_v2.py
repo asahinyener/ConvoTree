@@ -7,6 +7,7 @@ Integrates caching, configuration, error handling, and onboarding systems
 import os
 import sys
 import json
+import sqlite3
 import argparse
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -69,6 +70,7 @@ class ConvoTreeCLIV2:
             
             # Conversation management
             '/conversations': self._cmd_list_conversations,
+            '/resume': self._cmd_resume_conversation,
             '/switch': self._cmd_switch_conversation,
             '/new': self._cmd_new_conversation,
             '/delete': self._cmd_delete_conversation,
@@ -81,6 +83,9 @@ class ConvoTreeCLIV2:
             '/search': self._cmd_search,
             '/analyze': self._cmd_analyze,
             '/stats': self._cmd_stats,
+            '/reason': self._cmd_reason_knowledge,
+            '/compress': self._cmd_compress_knowledge,
+            '/dream': self._cmd_dream_consolidation,
             
             # Debug and development
             '/debug': self._cmd_debug,
@@ -373,11 +378,15 @@ Type your message or use a command starting with `/`
             ],
             "advanced": [
                 ("/conversations", "List all conversations", "/conversations"),
+                ("/resume", "Resume previous conversation", "/resume"),
                 ("/switch <id>", "Switch conversation", "/switch other_conversation"),
                 ("/new [id]", "Create conversation", "/new project_chat"),
                 ("/export", "Export conversation", "/export [format]"),
                 ("/visualize", "Create knowledge graph", "/visualize"),
-                ("/search <query>", "Search knowledge", "/search python")
+                ("/search <query>", "Search knowledge", "/search python"),
+                ("/reason", "Run knowledge graph reasoning", "/reason"),
+                ("/compress", "Auto-compress knowledge graph", "/compress"),
+                ("/dream", "Universal memory consolidation", "/dream")
             ],
             "debug": [
                 ("/debug-mode", "Toggle debug mode", "/debug-mode"),
@@ -820,11 +829,375 @@ Thanks for using ConvoTree! Your conversation is safely stored. 🌳
     def _cmd_benchmark(self, args): pass  # Implement similar to original
     def _cmd_export(self, args): pass  # Implement similar to original
     def _cmd_visualize(self, args): pass  # Implement similar to original
-    def _cmd_list_conversations(self, args): pass  # Implement similar to original
-    def _cmd_switch_conversation(self, args): pass  # Implement similar to original
+    def _cmd_list_conversations(self, args): 
+        """List all available conversations"""
+        try:
+            with sqlite3.connect(self.conversation_manager.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT c.id, c.created_at, COUNT(t.turn_id) as turn_count, COUNT(kt.id) as knowledge_count
+                    FROM conversations c
+                    LEFT JOIN turns t ON c.id = t.conversation_id
+                    LEFT JOIN knowledge_triples kt ON c.id = kt.conversation_id
+                    GROUP BY c.id, c.created_at
+                    ORDER BY c.created_at DESC
+                """)
+                conversations = cursor.fetchall()
+                
+                if not conversations:
+                    self.console.print("[yellow]📝 No conversations found[/yellow]")
+                    return
+                
+                table = Table(title="💬 Available Conversations")
+                table.add_column("ID", style="cyan")
+                table.add_column("Created", style="green")
+                table.add_column("Turns", style="blue")
+                table.add_column("Knowledge", style="magenta")
+                table.add_column("Status", style="yellow")
+                
+                for conv_id, created_at, turn_count, knowledge_count in conversations:
+                    status = "🟢 Current" if conv_id == self.conversation_id else "⚪"
+                    table.add_row(
+                        conv_id,
+                        created_at[:19] if created_at else "Unknown",
+                        str(turn_count),
+                        str(knowledge_count),
+                        status
+                    )
+                
+                self.console.print(table)
+                
+        except Exception as e:
+            self.console.print(f"[red]❌ Error listing conversations: {e}[/red]")
+    
+    def _cmd_resume_conversation(self, args):
+        """Interactive conversation selection and resumption"""
+        try:
+            # Get all conversations with knowledge
+            with sqlite3.connect(self.conversation_manager.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT c.id, c.created_at, COUNT(t.turn_id) as turn_count, COUNT(kt.id) as knowledge_count
+                    FROM conversations c
+                    LEFT JOIN turns t ON c.id = t.conversation_id
+                    LEFT JOIN knowledge_triples kt ON c.id = kt.conversation_id
+                    GROUP BY c.id, c.created_at
+                    HAVING turn_count > 0 OR knowledge_count > 0
+                    ORDER BY c.created_at DESC
+                    LIMIT 10
+                """)
+                conversations = cursor.fetchall()
+                
+                if not conversations:
+                    self.console.print("[yellow]📝 No previous conversations found[/yellow]")
+                    return
+                
+                # Display conversation options
+                self.console.print("\n[bold cyan]🔄 Resume Previous Conversation[/bold cyan]\n")
+                
+                table = Table()
+                table.add_column("Option", style="cyan", width=8)
+                table.add_column("Conversation ID", style="green")
+                table.add_column("Created", style="blue")
+                table.add_column("Turns", style="magenta")
+                table.add_column("Knowledge", style="yellow")
+                
+                for i, (conv_id, created_at, turn_count, knowledge_count) in enumerate(conversations, 1):
+                    table.add_row(
+                        f"[{i}]",
+                        conv_id,
+                        created_at[:19] if created_at else "Unknown",
+                        str(turn_count),
+                        str(knowledge_count)
+                    )
+                
+                self.console.print(table)
+                self.console.print("\n[dim]Enter the number of the conversation to resume (or 'q' to cancel):[/dim]")
+                
+                # Get user selection
+                try:
+                    choice = input("Choose conversation: ").strip().lower()
+                    
+                    if choice == 'q':
+                        self.console.print("[yellow]🚫 Resume cancelled[/yellow]")
+                        return
+                    
+                    choice_num = int(choice)
+                    if 1 <= choice_num <= len(conversations):
+                        selected_conv = conversations[choice_num - 1]
+                        conv_id = selected_conv[0]
+                        
+                        # Switch to the selected conversation
+                        self._switch_to_conversation(conv_id)
+                        
+                    else:
+                        self.console.print(f"[red]❌ Invalid option. Please choose 1-{len(conversations)}[/red]")
+                        
+                except ValueError:
+                    self.console.print("[red]❌ Invalid input. Please enter a number[/red]")
+                except KeyboardInterrupt:
+                    self.console.print("\n[yellow]🚫 Resume cancelled[/yellow]")
+                    
+        except Exception as e:
+            self.console.print(f"[red]❌ Error resuming conversation: {e}[/red]")
+    
+    def _switch_to_conversation(self, conv_id: str):
+        """Switch to a different conversation"""
+        try:
+            # Update current conversation
+            old_conv_id = self.conversation_id
+            self.conversation_id = conv_id
+            
+            # Get new conversation instance
+            self.chat = self.conversation_manager.get_conversation(conv_id)
+            
+            # Show confirmation with context
+            with sqlite3.connect(self.conversation_manager.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT COUNT(*) FROM turns WHERE conversation_id = ?
+                """, (conv_id,))
+                turn_count = cursor.fetchone()[0]
+                
+                cursor.execute("""
+                    SELECT COUNT(*) FROM knowledge_triples WHERE conversation_id = ?
+                """, (conv_id,))
+                knowledge_count = cursor.fetchone()[0]
+            
+            success_text = f"""
+## ✅ Successfully Resumed Conversation
+
+**Previous Session:** `{old_conv_id}`  
+**Current Session:** `{conv_id}`  
+**Available Context:** {turn_count} turns, {knowledge_count} knowledge facts  
+
+Your conversation history and knowledge graph have been restored.
+Type your message to continue where you left off.
+            """
+            
+            panel = Panel(
+                Markdown(success_text),
+                title="[bold green]🔄 Conversation Resumed[/bold green]",
+                border_style="green"
+            )
+            self.console.print(panel)
+            
+        except Exception as e:
+            self.console.print(f"[red]❌ Error switching conversation: {e}[/red]")
+            # Revert on error
+            self.conversation_id = old_conv_id
+    
+    def _cmd_switch_conversation(self, args): 
+        """Switch to a conversation by ID"""
+        if not args:
+            self.console.print("[yellow]💡 Usage: /switch <conversation_id>[/yellow]")
+            return
+        
+        conv_id = args[0]
+        self._switch_to_conversation(conv_id)
+    
     def _cmd_new_conversation(self, args): pass  # Implement similar to original
     def _cmd_delete_conversation(self, args): pass  # Implement similar to original
     def _cmd_clear(self, args): os.system('clear' if os.name == 'posix' else 'cls')
+    
+    def _cmd_reason_knowledge(self, args):
+        """Run knowledge graph reasoning and consolidation"""
+        try:
+            self.console.print("[bold cyan]🧠 Starting Knowledge Graph Reasoning...[/bold cyan]\n")
+            
+            # Import and initialize reasoning engine
+            from ..core.memory.graph_reasoning_engine import KnowledgeGraphReasoningEngine
+            
+            # Skip embedding model for now to avoid dependencies
+            reasoning_engine = KnowledgeGraphReasoningEngine(
+                db_path=self.conversation_manager.db_path
+            )
+            
+            with self.console.status("[bold blue]Analyzing knowledge graph...", spinner="dots"):
+                # First, analyze current state
+                analysis = reasoning_engine.analyze_conversation_knowledge(self.conversation_id)
+            
+            # Display analysis results
+            self.console.print("[bold green]📊 Knowledge Graph Analysis[/bold green]")
+            self.console.print(f"• Total triples: {analysis['total_triples']}")
+            self.console.print(f"• Unique entities: {analysis['unique_entities']}")
+            self.console.print(f"• Unique relations: {analysis['unique_relations']}")
+            self.console.print(f"• Consolidation potential: {analysis['consolidation_potential']:.1%}\n")
+            
+            # Show specific issues found
+            issues = analysis['issues']
+            if issues['duplicate_relations']:
+                self.console.print("[yellow]🔍 Duplicate Relations Found:[/yellow]")
+                for dup in issues['duplicate_relations'][:3]:  # Show first 3
+                    entities_str = f"{dup['entities'][0]} → {dup['entities'][1]}"
+                    relations_str = ", ".join(dup['relations'])
+                    self.console.print(f"  • {entities_str}: {relations_str}")
+                self.console.print()
+            
+            if issues['consolidation_opportunities']:
+                self.console.print("[yellow]🎯 Consolidation Opportunities:[/yellow]")
+                for opp in issues['consolidation_opportunities'][:3]:
+                    if opp['type'] == 'node_consolidation':
+                        candidates_str = ", ".join(opp['candidates'])
+                        self.console.print(f"  • {opp['primary']} ≈ {candidates_str} (confidence: {opp['confidence']:.2f})")
+                self.console.print()
+            
+            if issues['missing_inferences']:
+                self.console.print("[yellow]💡 Missing Inferences:[/yellow]")
+                for inf in issues['missing_inferences']:
+                    self.console.print(f"  • {inf['suggestion']} (confidence: {inf['confidence']:.2f})")
+                    self.console.print(f"    Evidence: {', '.join([f'{r} → {o}' for r, o in inf['evidence']])}")
+                self.console.print()
+            
+            # Ask user if they want to proceed with reasoning
+            if analysis['consolidation_potential'] > 0.1:
+                proceed = input("\n🤔 Run automated reasoning and consolidation? (y/n): ").strip().lower()
+                
+                if proceed == 'y':
+                    with self.console.status("[bold blue]Running offline reasoning...", spinner="dots"):
+                        results = reasoning_engine.perform_offline_reasoning(self.conversation_id)
+                    
+                    # Display results
+                    self.console.print(f"\n[bold green]✅ Reasoning Complete![/bold green]")
+                    self.console.print(f"• Original triples: {results['original_triples']}")
+                    self.console.print(f"• Final triples: {results['final_triples']}")
+                    self.console.print(f"• Node clusters created: {len(results['clusters'])}")
+                    self.console.print(f"• Relations consolidated: {len(results['consolidations'])}")
+                    self.console.print(f"• New inferences: {len(results['inferences'])}\n")
+                    
+                    # Show some specific changes
+                    if results['clusters']:
+                        self.console.print("[cyan]🔗 Node Consolidations:[/cyan]")
+                        for cluster in results['clusters'][:3]:
+                            aliases_str = ", ".join(cluster['aliases'])
+                            self.console.print(f"  • {cluster['primary_node']} ← {aliases_str}")
+                        self.console.print()
+                    
+                    if results['inferences']:
+                        self.console.print("[cyan]💡 New Inferences:[/cyan]")
+                        for inf in results['inferences'][:5]:
+                            self.console.print(f"  • {inf['subject']} {inf['relation']} {inf['object']} (confidence: {inf['confidence']:.2f})")
+                        self.console.print()
+                    
+                    # Suggest testing the improvements
+                    self.console.print("[dim]💡 Try asking 'What do you know about me?' to see the improved knowledge integration![/dim]")
+                else:
+                    self.console.print("[yellow]🚫 Reasoning cancelled[/yellow]")
+            else:
+                self.console.print("[green]✅ Knowledge graph is already well-structured![/green]")
+                
+        except ImportError as e:
+            if "sentence_transformers" in str(e):
+                self.console.print("[red]❌ Missing dependency: sentence-transformers[/red]")
+                self.console.print("[yellow]💡 Install with: pip install sentence-transformers[/yellow]")
+            else:
+                self.console.print(f"[red]❌ Import error: {e}[/red]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Reasoning error: {e}[/red]")
+            if self.config.ui.debug_mode:
+                import traceback
+                self.console.print(f"[dim red]{traceback.format_exc()}[/dim red]")
+    
+    def _cmd_compress_knowledge(self, args):
+        """Automatically compress and consolidate knowledge graph"""
+        try:
+            self.console.print("[bold cyan]🗜️  Compressing Knowledge Graph...[/bold cyan]\n")
+            
+            # Import and initialize reasoning engine
+            from ..core.memory.graph_reasoning_engine import KnowledgeGraphReasoningEngine
+            
+            reasoning_engine = KnowledgeGraphReasoningEngine(
+                db_path=self.conversation_manager.db_path
+            )
+            
+            with self.console.status("[bold blue]Running auto-consolidation...", spinner="dots"):
+                # Perform automatic consolidation
+                results = reasoning_engine.perform_auto_consolidation(self.conversation_id)
+            
+            # Display results
+            if results["auto_consolidations"] > 0 or results["auto_inferences"] > 0:
+                self.console.print(f"[bold green]✅ Compression Complete![/bold green]")
+                self.console.print(f"• Original triples: {results['original_triples']}")
+                self.console.print(f"• Final triples: {results['final_triples']}")
+                self.console.print(f"• Auto-consolidations: {results['auto_consolidations']}")
+                self.console.print(f"• Auto-inferences: {results['auto_inferences']}\n")
+                
+                if results["changes_made"]:
+                    self.console.print("[cyan]🔧 Changes Made:[/cyan]")
+                    for change in results["changes_made"][:5]:  # Show first 5
+                        self.console.print(f"  • {change}")
+                    if len(results["changes_made"]) > 5:
+                        self.console.print(f"  • ... and {len(results['changes_made']) - 5} more")
+                    self.console.print()
+                
+                self.console.print("[dim]💡 Try asking 'What is my name?' to test the improvements![/dim]")
+            else:
+                self.console.print("[green]✅ Knowledge graph is already well-optimized![/green]")
+                self.console.print("[dim]No high-confidence consolidations found.[/dim]")
+                
+        except ImportError as e:
+            self.console.print(f"[red]❌ Import error: {e}[/red]")
+        except Exception as e:
+            self.console.print(f"[red]❌ Compression error: {e}[/red]")
+            if self.config.ui.debug_mode:
+                import traceback
+                self.console.print(f"[dim red]{traceback.format_exc()}[/dim red]")
+    
+    def _cmd_dream_consolidation(self, args):
+        """Universal memory consolidation - like dreaming across all domains"""
+        try:
+            self.console.print("[bold magenta]💭 Entering Memory Dreaming State...[/bold magenta]\n")
+            self.console.print("[dim]Universal semantic consolidation across ALL knowledge domains...[/dim]\n")
+            
+            # Import and initialize reasoning engine
+            from ..core.memory.graph_reasoning_engine import KnowledgeGraphReasoningEngine
+            
+            reasoning_engine = KnowledgeGraphReasoningEngine(
+                db_path=self.conversation_manager.db_path
+            )
+            
+            with self.console.status("[bold blue]💭 Dreaming... (REM-like consolidation)", spinner="dots"):
+                # Perform universal memory dreaming
+                results = reasoning_engine.perform_memory_dreaming(self.conversation_id)
+            
+            # Display dreaming results
+            consolidation_rate = results.get("consolidation_rate", 0)
+            
+            if consolidation_rate > 0.05:  # Significant consolidation
+                self.console.print(f"[bold green]✨ Memory Dreaming Complete![/bold green]")
+                self.console.print(f"• Original triples: {results['original_triples']}")
+                self.console.print(f"• Final triples: {results['final_triples']}")
+                self.console.print(f"• Consolidation rate: {consolidation_rate:.1%}")
+                self.console.print(f"• Semantic clusters: {len(results.get('semantic_clusters', []))}")
+                self.console.print(f"• Emergent patterns: {len(results.get('emergent_patterns', []))}")
+                self.console.print(f"• Confidence boosts: {len(results.get('confidence_boosts', []))}\n")
+                
+                # Show some semantic clusters
+                if results.get("semantic_clusters"):
+                    self.console.print("[cyan]🧠 Universal Semantic Clusters:[/cyan]")
+                    for cluster in results["semantic_clusters"][:3]:
+                        aliases = ", ".join(cluster.get("aliases", []))
+                        self.console.print(f"  • {cluster.get('primary_node', 'Unknown')} ⟵ {aliases}")
+                    self.console.print()
+                
+                # Show emergent patterns
+                if results.get("emergent_patterns"):
+                    self.console.print("[cyan]✨ Emergent Patterns Discovered:[/cyan]")
+                    for pattern in results["emergent_patterns"][:3]:
+                        self.console.print(f"  • {pattern.get('type', 'Pattern')}: {pattern.get('description', 'Discovery')}")
+                    self.console.print()
+                
+                self.console.print("[dim]💡 The knowledge graph has been universally grounded through dreaming![/dim]")
+                self.console.print("[dim]💡 Try asking complex questions to see improved reasoning![/dim]")
+            else:
+                self.console.print("[green]😴 Peaceful sleep - knowledge already well-consolidated![/green]")
+                self.console.print("[dim]The graph structure is already optimally organized.[/dim]")
+                
+        except Exception as e:
+            self.console.print(f"[red]❌ Dreaming interrupted: {e}[/red]")
+            if self.config.ui.debug_mode:
+                import traceback
+                self.console.print(f"[dim red]{traceback.format_exc()}[/dim red]")
 
 def main(conversation_id=None, config_path=None, debug=False):
     """Enhanced main function with configuration and error handling"""
