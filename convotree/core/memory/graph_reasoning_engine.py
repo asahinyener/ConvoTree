@@ -59,10 +59,10 @@ class KnowledgeGraphReasoningEngine:
     def __init__(self, db_path: str, model_name: str = "all-MiniLM-L6-v2"):
         self.db_path = db_path
         self.embedding_model = SentenceTransformer(model_name) if HAS_EMBEDDINGS else None
-        self.similarity_threshold = 0.85
-        self.consolidation_threshold = 0.75
-        self.inference_confidence_threshold = 0.6
-        self.auto_consolidation_threshold = 0.8  # Auto-consolidate when confidence is very high
+        self.similarity_threshold = 0.5  # Lower threshold to catch user/Alice
+        self.consolidation_threshold = 0.4  # Lower threshold for consolidation
+        self.inference_confidence_threshold = 0.3  # Lower threshold for inferences
+        self.auto_consolidation_threshold = 0.6  # Lower threshold for auto-consolidation
         
         # Dynamic pattern detection - no hardcoded patterns
         self.identity_patterns = []  # Will be populated dynamically
@@ -203,6 +203,59 @@ class KnowledgeGraphReasoningEngine:
         results["final_triples"] = self._count_triples(conversation_id)
         
         return results
+    
+    def _reason_with_llm(self, knowledge_facts: List[Tuple], conversation_context: str = "") -> List[Dict[str, any]]:
+        """Use LLM to reason about knowledge and discover new relationships"""
+        try:
+            import openai
+            
+            # Format knowledge facts for LLM
+            facts_text = "\n".join([f"- {subj} {rel} {obj}" for _, subj, rel, obj, _ in knowledge_facts])
+            
+            reasoning_prompt = f"""
+You are analyzing a knowledge graph to discover implicit relationships and new knowledge.
+
+Current Knowledge Facts:
+{facts_text}
+
+Your task is to reason about these facts and discover:
+1. Identity relationships (who is the same person)
+2. Implicit knowledge that can be inferred
+3. Missing connections between facts
+
+Focus especially on:
+- If multiple entities share the same unique properties, they might be the same person
+- Names and identity relationships
+- Logical inferences from the existing facts
+
+Return your analysis as a JSON list where each item has:
+{{"type": "inference", "subject": "entity1", "relation": "relationship", "object": "entity2", "confidence": 0.8, "reasoning": "explanation"}}
+
+Only return the JSON, no other text.
+"""
+            
+            # Get LLM reasoning (updated for openai>=1.0.0)
+            client = openai.OpenAI()
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": reasoning_prompt}],
+                temperature=0.1,
+                max_tokens=1000
+            )
+            
+            # Parse LLM response
+            try:
+                import json
+                llm_inferences = json.loads(response.choices[0].message.content.strip())
+                print(f"🧠 LLM discovered {len(llm_inferences)} new inferences")
+                return llm_inferences
+            except json.JSONDecodeError:
+                print("⚠️ Could not parse LLM response as JSON")
+                return []
+                
+        except Exception as e:
+            print(f"⚠️ LLM reasoning failed: {e}")
+            return []
     
     def _dream_semantic_clusters(self) -> List[NodeCluster]:
         """Universal semantic clustering - dreams connect any similar concepts"""
@@ -463,12 +516,13 @@ class KnowledgeGraphReasoningEngine:
         return sum(s * w for s, w in zip(similarities, weights))
     
     def _apply_dreaming_consolidations(self, conversation_id: str, semantic_clusters: List[NodeCluster],
-                                     emergent_patterns: List[Dict], confidence_updates: List[Dict]):
+                                     emergent_patterns: List[Dict], confidence_updates: List[Dict], 
+                                     llm_inferences: List[Dict] = None):
         """Apply all dreaming consolidations to the database"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
             
-            # Apply semantic clusters
+            # Apply semantic clusters (simple consolidation without pattern matching)
             for cluster in semantic_clusters:
                 for alias in cluster.aliases:
                     # Update triples where alias appears
@@ -502,6 +556,26 @@ class KnowledgeGraphReasoningEngine:
                             datetime.now().isoformat(),
                             "dreaming_engine"
                         ))
+            
+            # Apply LLM-discovered knowledge - this is where dreams add new knowledge!
+            if llm_inferences:
+                print(f"🧠 Applying {len(llm_inferences)} LLM-discovered inferences...")
+                for inference in llm_inferences:
+                    cursor.execute("""
+                        INSERT OR IGNORE INTO knowledge_triples 
+                        (conversation_id, subject, relation, object, confidence, created_at, source_turn)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        conversation_id,
+                        inference.get("subject", "unknown"),
+                        inference.get("relation", "relates_to"),
+                        inference.get("object", "unknown"),
+                        float(inference.get("confidence", 0.7)),
+                        datetime.now().isoformat(),
+                        "dreaming_llm_inference"
+                    ))
+                    print(f"   🧠 Added: {inference.get('subject')} {inference.get('relation')} {inference.get('object')} (confidence: {inference.get('confidence', 0.7):.2f})")
+                    print(f"      Reasoning: {inference.get('reasoning', 'LLM inference')}")
             
             # Apply confidence boosts
             for update in confidence_updates:
@@ -553,7 +627,11 @@ class KnowledgeGraphReasoningEngine:
         semantic_clusters = self._dream_semantic_clusters()
         results["semantic_clusters"] = [asdict(cluster) for cluster in semantic_clusters]
         
-        # Phase 2: Cross-domain pattern emergence
+        # Phase 2: LLM-powered reasoning - the dream learns new knowledge
+        llm_inferences = self._reason_with_llm(triples)
+        results["llm_inferences"] = llm_inferences
+        
+        # Phase 2b: Cross-domain pattern emergence (traditional patterns)
         emergent_patterns = self._discover_emergent_patterns()
         results["emergent_patterns"] = emergent_patterns
         
@@ -563,7 +641,7 @@ class KnowledgeGraphReasoningEngine:
         
         # Phase 4: Apply all dreaming consolidations
         self._apply_dreaming_consolidations(conversation_id, semantic_clusters, 
-                                          emergent_patterns, confidence_updates)
+                                          emergent_patterns, confidence_updates, llm_inferences)
         
         results["final_triples"] = self._count_triples(conversation_id)
         results["consolidation_rate"] = 1 - (results["final_triples"] / results["original_triples"])
@@ -646,34 +724,43 @@ class KnowledgeGraphReasoningEngine:
         )
     
     def _calculate_contextual_similarity(self, node1: str, node2: str) -> float:
-        """Calculate similarity based on shared relationships"""
+        """Calculate similarity based on shared relationships - enhanced for identity detection"""
         node1_relations = set()
         node2_relations = set()
         
-        # Get all relations for both nodes
+        # Get all relations for both nodes (focus on outgoing relations for identity)
         for _, target, data in self.knowledge_graph.out_edges(node1, data=True):
-            node1_relations.add((data['relation'], target))
-        for source, _, data in self.knowledge_graph.in_edges(node1, data=True):
-            node1_relations.add((source, data['relation']))
+            canonical_relation = self._find_canonical_relation(data['relation'])
+            node1_relations.add((canonical_relation, target))
             
         for _, target, data in self.knowledge_graph.out_edges(node2, data=True):
-            node2_relations.add((data['relation'], target))
-        for source, _, data in self.knowledge_graph.in_edges(node2, data=True):
-            node2_relations.add((source, data['relation']))
+            canonical_relation = self._find_canonical_relation(data['relation'])
+            node2_relations.add((canonical_relation, target))
         
         if not node1_relations or not node2_relations:
             return 0.0
-            
-        # Calculate Jaccard similarity with relation normalization
-        intersection = 0
-        for rel1 in node1_relations:
-            for rel2 in node2_relations:
-                if self._are_relations_similar(rel1, rel2):
-                    intersection += 1
-                    break
         
-        union = len(node1_relations) + len(node2_relations) - intersection
-        return intersection / union if union > 0 else 0.0
+        # Find exact matches (same relation to same object)
+        shared_relations = node1_relations & node2_relations
+        
+        # High bonus for sharing unique/specific relationships
+        if shared_relations:
+            similarity = len(shared_relations) / max(len(node1_relations), len(node2_relations))
+            
+            # Extra bonus for sharing multiple unique properties (strong identity signal)
+            if len(shared_relations) >= 2:
+                similarity = min(1.0, similarity * 1.5)  # Boost for multiple shared properties
+            
+            # Debug output
+            if similarity > 0.3:
+                print(f"🔍 Contextual similarity {node1}↔{node2}: {similarity:.2f}")
+                print(f"   Shared: {shared_relations}")
+                print(f"   Node1: {node1_relations}")
+                print(f"   Node2: {node2_relations}")
+            
+            return similarity
+        
+        return 0.0
     
     def _calculate_pattern_similarity(self, node1: str, node2: str) -> float:
         """Check if nodes match identity patterns - now completely dynamic"""
@@ -764,23 +851,54 @@ class KnowledgeGraphReasoningEngine:
     
     def _infer_identity_relationships(self) -> List[Dict[str, any]]:
         """
-        Key inference: if user and Alice share same unique properties, they're likely the same person
+        Enhanced identity inference: detect when entities share unique properties
         """
         inferences = []
         
-        # Find nodes that share multiple unique relationships
+        # Build relationship profiles for each node
         node_relationships = defaultdict(set)
         for source, target, data in self.knowledge_graph.edges(data=True):
             relation = self._find_canonical_relation(data['relation'])
             node_relationships[source].add((relation, target))
         
-        # Look for nodes with high relationship overlap
+        # Special focus on user/name patterns
         nodes = list(node_relationships.keys())
+        
+        # Debug: show all node relationships
+        print(f"\n🧠 Analyzing {len(nodes)} nodes for identity patterns:")
+        for node in nodes:
+            if len(node_relationships[node]) > 0:
+                print(f"   {node}: {node_relationships[node]}")
+        
+        # Look for identity patterns
         for i, node1 in enumerate(nodes):
             for node2 in nodes[i+1:]:
-                overlap = node_relationships[node1] & node_relationships[node2]
-                if len(overlap) >= 2:  # Share at least 2 unique relationships
-                    confidence = len(overlap) / max(len(node_relationships[node1]), len(node_relationships[node2]))
+                # Skip if same node
+                if node1 == node2:
+                    continue
+                
+                # Get shared relationships
+                shared = node_relationships[node1] & node_relationships[node2]
+                
+                if shared:  # Any shared relationship is worth examining
+                    total_unique_rels = len(node_relationships[node1] | node_relationships[node2])
+                    overlap_ratio = len(shared) / max(len(node_relationships[node1]), len(node_relationships[node2]), 1)
+                    
+                    # Calculate confidence based on uniqueness of shared relationships
+                    confidence = overlap_ratio
+                    
+                    # Boost confidence for specific identity patterns
+                    node1_lower = node1.lower()
+                    node2_lower = node2.lower()
+                    
+                    # Boost for user/name patterns
+                    if ('user' in node1_lower and node2_lower not in ['user', 'i', 'me']) or \
+                       ('user' in node2_lower and node1_lower not in ['user', 'i', 'me']):
+                        confidence = min(1.0, confidence * 2.0)
+                        
+                    print(f"🔍 Identity candidate: {node1} ↔ {node2}")
+                    print(f"   Shared: {shared}")
+                    print(f"   Confidence: {confidence:.2f}")
                     
                     if confidence > self.inference_confidence_threshold:
                         inferences.append({
@@ -789,8 +907,8 @@ class KnowledgeGraphReasoningEngine:
                             "relation": "same_as",
                             "object": node2,
                             "confidence": confidence,
-                            "evidence": list(overlap),
-                            "reasoning": f"Shared {len(overlap)} unique relationships"
+                            "evidence": list(shared),
+                            "reasoning": f"Shared {len(shared)} properties: {', '.join([f'{r}→{o}' for r, o in shared])}"
                         })
         
         return inferences

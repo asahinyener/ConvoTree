@@ -1169,12 +1169,22 @@ Type your message to continue where you left off.
                 self.console.print(f"• Final triples: {results['final_triples']}")
                 self.console.print(f"• Consolidation rate: {consolidation_rate:.1%}")
                 self.console.print(f"• Semantic clusters: {len(results.get('semantic_clusters', []))}")
+                self.console.print(f"• LLM inferences: {len(results.get('llm_inferences', []))}")
                 self.console.print(f"• Emergent patterns: {len(results.get('emergent_patterns', []))}")
                 self.console.print(f"• Confidence boosts: {len(results.get('confidence_boosts', []))}\n")
                 
-                # Show some semantic clusters
+                # Show LLM discoveries first (most important)
+                if results.get("llm_inferences"):
+                    self.console.print("[cyan]🧠 LLM-Discovered Knowledge:[/cyan]")
+                    for inference in results["llm_inferences"][:3]:
+                        self.console.print(f"  • {inference.get('subject')} {inference.get('relation')} {inference.get('object')}")
+                        if inference.get('reasoning'):
+                            self.console.print(f"    ↳ {inference['reasoning']}")
+                    self.console.print()
+                
+                # Show semantic clusters
                 if results.get("semantic_clusters"):
-                    self.console.print("[cyan]🧠 Universal Semantic Clusters:[/cyan]")
+                    self.console.print("[cyan]🔗 Semantic Clusters:[/cyan]")
                     for cluster in results["semantic_clusters"][:3]:
                         aliases = ", ".join(cluster.get("aliases", []))
                         self.console.print(f"  • {cluster.get('primary_node', 'Unknown')} ⟵ {aliases}")
