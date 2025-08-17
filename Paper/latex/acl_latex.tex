@@ -113,15 +113,15 @@ We present a systematic taxonomy of Knowledge Graph-enhanced Dialogue State Trac
 
 \section{Introduction}
 
-Task-oriented dialogue systems must track user goals across conversational turns while managing growing context windows. Modern day models are able to take user queries in unstructured natural language format and generalize to unseen computations through multiple techniques \citep{dong2022survey,wei2023chainofthoughtpromptingelicitsreasoning,bai2022training}.
+Task-oriented dialogue systems must track user goals across conversational turns while managing growing context windows. Modern language models can process unstructured natural language queries and generalize to unseen computations through various techniques \citep{dong2022survey,wei2023chainofthoughtpromptingelicitsreasoning,bai2022training}.
 
-End to end approaches sample tokens autoregresively by attending over the tokens from the previous dialogue turns with transformers. The model is run until the end of turn token is generated and the user is prompted for further input. Generated tokens depend on all previous tokens in the context and learned parameters in transformer layers. As context length increases, computational load grows and retrieval quality diminishes \citep{nelson2024needle,hong2025context}.   
-While strict care is taken to enrich and contain as much as possible data in the pretraining and the RLHF stages it is not possible to keep the model constantly updated and have wide task coverage for logistics and economics reason. Task specific procedures have to be included in the context through search, retrieval and augmentation. Dialogue state tracking addresses this by maintaining structured representations of user goals, while knowledge graphs can enhance this tracking through explicit relational modeling.
+End-to-end approaches sample tokens autoregressively by attending over previous dialogue turns with transformers. The model generates responses until an end-of-turn token is produced. As context length increases, computational load grows and retrieval quality diminishes \citep{nelson2024needle,hong2025context}.   
+While pretraining and RLHF stages aim to enrich model knowledge, constant updates and comprehensive task coverage remain challenging due to logistical and economic constraints. Task-specific procedures must be included in context through search, retrieval, and augmentation. Dialogue state tracking addresses this by maintaining structured representations of user goals, while knowledge graphs can enhance this tracking through explicit relational modeling.
 
 
 In task-oriented dialogue research, the domain designates the topical sphere—such as restaurant or hotel—within which the system must act. Each domain is governed by an ontology (sometimes called a schema), that is, a catalogue of slots (attributes) and their admissible slot values. A slot corresponds to a particular attribute—for example, price-range—while a slot value is its concrete instantiation, as when the user specifies “cheap.” After every conversational turn, the system maintains a belief state: a probabilistic hypothesis over the possible slot–value pairs that represent what it currently thinks the user wants, which evolves as the dialogue unfolds. Utterances themselves are characterised by dialogue acts such as inform, request, or confirm; these acts, together with recognised intents like book-table, serve as abstractions of communicative function. A turn (or frame) comprises one user utterance followed by one system response, and the ordered sequence of turns constitutes the dialogue history.
 
-Knowledge Graphs are a subtype of directed graphs, where there is a label attached to the edge denoting the semantic relationship between the source, destination vertices. Each vertex is populated by either an entity or a property of such entities. They can be used to structure a dataset into a graph format enabling storage, visualization and multi-hop reasoning over the knowledge base. Multi-hop reasoning leverages the connectivity of multiple nodes to enable enriched context with semantically relevant information to be pooled into the context from neighboring vertices. 
+Knowledge graphs are a subtype of directed graphs, where labels attached to edges denote semantic relationships between source and destination vertices. Each vertex is populated by either an entity or a property of such entities. They can be used to structure a dataset into a graph format enabling storage, visualization and multi-hop reasoning over the knowledge base. Multi-hop reasoning leverages the connectivity of multiple nodes to enable enriched context with semantically relevant information to be pooled into the context from neighboring vertices. 
 
 State representation of the dialogue with task defined slots are structured to make interfacing with external knowledge and rule bases much easier. These tasks might require business logic to be adhered to, the context to be pieced over multi turns and missing slots to be prompted from the user. Knowledge graphs can integrate with task oriented dialogue systems by providing an interface for external information, however the semantically related graph representation also successfully models the dynamic and structured dialogue state.
 
@@ -140,6 +140,41 @@ Knowledge Graphs structure information as entity-relation-entity triples, origin
 \section{Methods: A Taxonomy of Knowledge Graph-Enhanced DST}
 
 Knowledge Graph-enhanced dialogue state tracking (DST) has evolved from simple static schemas to sophisticated dynamic architectures that adapt to conversation flow. Rather than presenting approaches chronologically, we propose a systematic taxonomy that organizes methods by their fundamental design principles. This classification reveals clear patterns in how graph structures address different DST challenges and guides future research directions.
+
+Figure~\ref{fig:taxonomy} presents our four-dimensional taxonomy, organizing KG-enhanced DST approaches by their fundamental design choices. Each dimension captures a critical aspect of system design, from graph construction strategies to practical deployment considerations.
+
+\begin{figure*}[t]
+\centering
+\begin{tabular}{|p{3.5cm}|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+\hline
+\multicolumn{4}{|c|}{\textbf{\Large Knowledge Graph-Enhanced DST Taxonomy}} \\
+\hline
+\hline
+\textbf{Graph Construction Strategy} & \textbf{Integration with Language Models} & \textbf{Scope and Domain Coverage} & \textbf{Computational Efficiency} \\
+\hline
+\hline
+\textit{Static Schema Graphs} & \textit{Graph-Augmented Transformers} & \textit{Single-Domain Specialists} & \textit{Lightweight Graph Modules} \\
+\small{SST: Fixed ontology edges} & \small{GPT2-GAT: GNN + Transformer} & \small{GraphDialog: Restaurant booking} & \small{ECDG-DST: 30ms latency} \\
+& & & \\
+\hline
+\textit{Dynamic Turn-Level Graphs} & \textit{Graph-Guided Generation} & \textit{Multi-Domain Generalizers} & \textit{Scalable Message Passing} \\
+\small{DSTQA: Evolving schema} & \small{Noetic-Graph: LLM + Reranking} & \small{GCDST: Cross-domain linking} & \small{Sparse formulations} \\
+& & & \\
+\hline
+\textit{Hierarchical Multi-Level Graphs} & \textit{Learned Relational Mechanisms} & \textit{Cross-Lingual \& Multimodal} & \\
+\small{HS2DG: Dual graph levels} & \small{STAR: Self-attention relations} & \small{XQA-DST: Multilingual transfer} & \\
+& & & \\
+\hline
+\hline
+\multicolumn{4}{|c|}{\textbf{Key Insights from Taxonomic Analysis}} \\
+\hline
+\textbf{Hybrid Architectures} & \textbf{Multi-Level Modeling} & \textbf{Dynamic Adaptation} & \textbf{Convergence Trends} \\
+LLM + Graph verification & Token $\rightarrow$ Slot $\rightarrow$ Domain & Conversation-specific patterns & Toward unified frameworks \\
+\hline
+\end{tabular}
+\caption{Systematic taxonomy of Knowledge Graph-enhanced Dialogue State Tracking approaches. Our framework organizes methods along four key dimensions: (1) Graph Construction Strategy, (2) Integration with Language Models, (3) Scope and Domain Coverage, and (4) Computational Efficiency. Representative examples and key insights from taxonomic analysis are shown, revealing convergence toward hybrid architectures and multi-level modeling approaches.}
+\label{fig:taxonomy}
+\end{figure*}
 
 \subsection{Graph Construction Strategy}
 
@@ -192,7 +227,7 @@ Advanced systems address the O(|S|²) complexity of dense message passing throug
 
 \subsection{Synthesis and Future Directions}
 
-This taxonomy reveals several key insights about the evolution of graph-enhanced DST:
+Our taxonomic analysis (Figure~\ref{fig:taxonomy}) reveals several key insights about the evolution of graph-enhanced DST:
 
 \textbf{Convergence toward Hybrid Architectures:} The most successful recent approaches combine large language model generation with graph-based verification, suggesting that future progress lies in tighter integration rather than pure graph-based or pure neural approaches.
 
@@ -248,6 +283,8 @@ SGD also reports a softer goal metric that averages slot-level correctness \emph
 \]
 Graph-augmented trackers (e.g.\ SST, DSTQA) consistently record higher AGA scores, underscoring their robustness to unseen slots and values.
 
+The choice of evaluation metric significantly impacts the assessment of graph-enhanced DST systems. Joint Goal Accuracy (JGA) provides the most stringent evaluation by requiring perfect slot-value prediction across all active slots at each turn, making it the primary benchmark for system comparison. However, JGA's binary nature can mask incremental improvements, particularly for systems that achieve high slot-level accuracy but struggle with perfect joint prediction. Slot Accuracy (SA) offers a more granular view, typically showing that modern trackers achieve 96-98\% per-slot correctness on MultiWOZ 2.4, yet this high individual slot performance often fails to translate to proportionally high JGA due to error accumulation across multiple slots. For multi-domain scenarios, metrics like Active Intent Accuracy (AIA) and Requested Slots F1 become crucial for evaluating a system's ability to handle complex service interactions and user requests, where graph-based approaches often demonstrate superior performance due to their explicit modeling of domain and slot relationships.
+
 \begin{table*}[tb]
   \small
   \centering
@@ -280,7 +317,7 @@ Graph-augmented trackers (e.g.\ SST, DSTQA) consistently record higher AGA score
     \bottomrule
   \end{tabular}
 \end{table*}
-As Table~\ref{tab:dst-performance} indicates, incorporating graph structure (models marked $\dagger$) leads to higher joint accuracy. For example, SST’s schema graph helped it reach about 68–70\% JGA on MultiWOZ 2.4 (up from 51\% on 2.1), comparable to the best models of its time. The copy-augmented GCDST and the triple-copy model TripPy likewise outperform earlier approaches lacking relational mechanisms. Improvements between MultiWOZ 2.1 and 2.4 are substantial – e.g.\ DST-STAR jumps from 56.4\% to 73.6\% JGA – reflecting both cleaner data and better exploitation of graph reasoning. On MultiWOZ 2.4, top approaches achieve JGA in the 70–75\% range and slot-level accuracy above 97\%. 
+Table~\ref{tab:dst-performance} reveals a complex picture regarding graph-enhanced DST performance on MultiWOZ 2.4. While the highest-performing model (BREAK-T5 at 90.7\% JGA) does not use explicit graph structures, several graph-based approaches achieve competitive results in the 76-78\% range, including HFSG-DST (78.1\%), Noetic-Graph DST (78.0\%), and HS2DG-DST (77.0\%). However, some earlier graph methods like DSTQA (60.5\%) and SST (68.2\%) perform below recent non-graph baselines. This suggests that graph structure alone is not sufficient—the key lies in how effectively the graph representations are integrated with modern language modeling techniques. The performance gap between top performers (90.7\%) and typical systems (60-70\%) highlights substantial room for improvement across all approaches, with recent hybrid methods showing the most promise for bridging distributional and symbolic reasoning paradigms. 
 
 \subsection{Graph versus non-graph behaviour}
 Graph inductive bias directly addresses two long-standing DST pain points: \emph{coreference resolution} (linking repeated or synonymous mentions) and \emph{state carry-over} (propagating values across distant turns). Message-passing layers in DSTQA or DSGFNet propagate embeddings so that, for example, a ``restaurant-name’’ node can influence ``taxi-destination’’ when the user says “take me there.”  Non-graph models such as vanilla BERT rely on fixed‐length context windows and therefore degrade on longer dialogues.
@@ -340,7 +377,7 @@ ConvoTree explores how taxonomic dimensions can be combined in practice: (1) dyn
 
 \subsection{Open Source Impact}
 
-ConvoTree is released as an open-source project\footnote{Available at: \url{https://github.com/ConvoTree/ConvoTree}} to support research in graph-enhanced dialogue systems. The modular architecture and clear documentation facilitate experimentation with different approaches to knowledge graph construction and consolidation. Potential applications include customer service, education, and creative writing systems that require persistent memory across conversations.
+ConvoTree is released as an open-source project\footnote{Available at: \url{https://github.com/asahinyener/ConvoTree/releases/tag/v0.1}} to support research in graph-enhanced dialogue systems. The modular architecture and clear documentation facilitate experimentation with different approaches to knowledge graph construction and consolidation. Potential applications include customer service, education, and creative writing systems that require persistent memory across conversations.
 
 
 % Bibliography entries for the entire Anthology, followed by custom entries
