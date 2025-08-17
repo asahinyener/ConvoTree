@@ -108,7 +108,7 @@
 \maketitle
 
 \begin{abstract}
-We present a systematic taxonomy of Knowledge Graph-enhanced Dialogue State Tracking (DST) methods, organizing approaches by four key dimensions: graph construction strategy, integration with language models, scope and domain coverage, and computational efficiency. Unlike previous chronological surveys, our taxonomy reveals fundamental design patterns and identifies convergence toward hybrid architectures that combine graph reasoning with large language models. We demonstrate these principles through ConvoTree, an open-source neural consolidation engine that addresses context rot in long-form conversations through dynamic graph construction, memory consolidation via neural "dreaming," and hierarchical context management. ConvoTree achieves 15-25x compression ratios while maintaining 94\% factual accuracy and handles conversations exceeding 10,000 turns. Our taxonomic analysis and practical implementation advance both theoretical understanding and production deployment of graph-enhanced dialogue systems.
+We present a systematic taxonomy of Knowledge Graph-enhanced Dialogue State Tracking (DST) methods, organizing approaches by four key dimensions: graph construction strategy, integration with language models, scope and domain coverage, and computational efficiency. Unlike previous chronological surveys, our taxonomy reveals fundamental design patterns and identifies convergence toward hybrid architectures that combine graph reasoning with large language models. We demonstrate these principles through ConvoTree, an open-source proof-of-concept system that explores neural consolidation for conversation memory management. ConvoTree implements dynamic graph construction with LLM-powered reasoning to discover relationships and consolidate knowledge across dialogue sessions. The system provides a command-line interface for experimenting with knowledge graph-based conversation persistence and demonstrates the potential for addressing context limitations in extended dialogues. Our taxonomic analysis and prototype implementation provide a foundation for future research in graph-enhanced dialogue systems.
 \end{abstract}
 
 \section{Introduction}
@@ -310,35 +310,37 @@ Knowledge graphs have advanced the state-of-the-art in dialogue state tracking b
 
 \section{ConvoTree: A Neural Consolidation Engine for Long-Form Dialogue}
 
-To demonstrate the practical application of our taxonomic principles, we introduce ConvoTree, a neural consolidation engine that addresses the fundamental challenge of \emph{context rot} in long-form conversations. ConvoTree integrates multiple approaches from our taxonomy within a unified architecture, providing a concrete instantiation of how graph-enhanced DST techniques can be combined for production deployment.
+To demonstrate the practical application of our taxonomic principles, we introduce ConvoTree, a proof-of-concept system that explores approaches to managing conversation memory through knowledge graphs. ConvoTree serves as an experimental platform for investigating how graph-enhanced DST techniques can be combined, providing insights for future system development.
 
 \subsection{System Overview}
 
 ConvoTree implements a novel approach to maintaining conversational coherence across extended interactions by combining three key innovations:
 
-\textbf{Dynamic Graph Construction:} Following the ``Dynamic Turn-Level Graphs'' pattern from our taxonomy, ConvoTree constructs and updates knowledge graphs incrementally as conversations unfold. Each dialogue turn triggers extraction of RDF triples $(subject, predicate, object)$ that capture salient facts and relationships, which are then integrated into the evolving conversation graph through neural coreference resolution.
+\textbf{Dynamic Graph Construction:} Following the ``Dynamic Turn-Level Graphs'' pattern from our taxonomy, ConvoTree constructs and updates knowledge graphs incrementally as conversations unfold. Each dialogue turn triggers extraction of RDF triples $(subject, predicate, object)$ that capture salient facts and relationships, which are then integrated into the evolving conversation graph using entity matching heuristics.
 
-\textbf{Neural Memory Consolidation:} ConvoTree's distinctive contribution is a biologically-inspired ``dreaming'' process that periodically consolidates conversation memory during idle periods. This three-phase cycle—replay, consolidation, and integration—reduces graph complexity over time while preserving essential conversational context, directly addressing the ``Scalable Message Passing'' challenge identified in our taxonomy.
+\textbf{LLM-Powered Consolidation:} ConvoTree implements a simplified ``dreaming'' process that uses large language models to identify relationships between entities in the knowledge graph. This consolidation mechanism explores how LLM reasoning can be applied to discover implicit connections and merge related concepts, providing a foundation for more sophisticated memory management approaches.
 
-\textbf{Hybrid Generation and Reasoning:} The system exemplifies ``Graph-Guided Generation and Reranking'' by combining graph-structured memory with LLM capabilities. Retrieved graph neighborhoods are integrated with compressed conversation summaries to inform response generation, demonstrating how explicit structural reasoning can enhance neural language models.
+\textbf{Knowledge-Augmented Interaction:} The system explores ``Graph-Guided Generation'' by maintaining a persistent knowledge graph alongside conversation history. The command-line interface allows users to query and manipulate the knowledge graph, providing a testbed for experimenting with graph-augmented dialogue approaches.
 
-\subsection{Empirical Results}
+\subsection{Prototype Capabilities}
 
-ConvoTree achieves significant improvements over baseline approaches across three key dimensions:
+ConvoTree demonstrates several key capabilities as a proof-of-concept system:
 
 \begin{itemize}
-\item \textbf{Memory Efficiency:} 15-25x compression ratios while maintaining 94\% factual accuracy, with successful handling of conversations exceeding 10,000 turns.
-\item \textbf{Response Quality:} 78\% preference rate in human evaluations for conversations longer than 50 turns, particularly excelling at maintaining consistency and avoiding contradictions.
-\item \textbf{Computational Performance:} 120ms median latency per turn with background consolidation at 2.3 conversations per second on standard hardware.
+\item \textbf{Persistent Knowledge Storage:} SQLite-based storage maintains conversation knowledge across sessions, allowing users to resume conversations with preserved context.
+\item \textbf{LLM-Powered Reasoning:} Integration with OpenAI GPT models enables the system to discover implicit relationships between entities and consolidate related concepts.
+\item \textbf{Interactive Exploration:} Command-line interface provides direct access to knowledge graph operations, supporting experimentation with different consolidation strategies.
 \end{itemize}
+
+While comprehensive performance benchmarking remains future work, initial experiments suggest promising potential for memory-efficient conversation management through knowledge graph consolidation.
 
 \subsection{Taxonomic Integration}
 
-ConvoTree demonstrates how our four taxonomic dimensions can be unified within a single system: (1) dynamic graph construction with automatic adaptation, (2) hybrid LLM-graph integration through guided generation, (3) domain-agnostic coverage through learned relationship patterns, and (4) production-suitable efficiency through hierarchical memory management. This integration validates our taxonomic framework while providing a practical foundation for future research.
+ConvoTree explores how taxonomic dimensions can be combined in practice: (1) dynamic graph construction through entity extraction, (2) LLM integration for relationship discovery, and (3) domain-agnostic operation through general-purpose knowledge representation. While the current prototype focuses on core functionality rather than optimization, it provides valuable insights into the challenges and opportunities of implementing graph-enhanced dialogue systems.
 
 \subsection{Open Source Impact}
 
-ConvoTree is released as an open-source project\footnote{Available at: \url{https://github.com/ConvoTree/ConvoTree}} to accelerate research in graph-enhanced dialogue systems. Early adoption has led to domain-specific extensions in customer service, education, and creative writing, demonstrating the system's versatility and the value of our taxonomic approach for guiding practical implementations.
+ConvoTree is released as an open-source project\footnote{Available at: \url{https://github.com/ConvoTree/ConvoTree}} to support research in graph-enhanced dialogue systems. The modular architecture and clear documentation facilitate experimentation with different approaches to knowledge graph construction and consolidation. Potential applications include customer service, education, and creative writing systems that require persistent memory across conversations.
 
 
 % Bibliography entries for the entire Anthology, followed by custom entries
@@ -351,59 +353,62 @@ ConvoTree is released as an open-source project\footnote{Available at: \url{http
 \section{ConvoTree Implementation Details}
 \label{appendix:convotree}
 
-This appendix provides detailed implementation specifications for ConvoTree, complementing the high-level overview presented in Section 6.
+This appendix provides implementation details for the ConvoTree prototype, describing the current system architecture and identifying areas for future development.
 
 \subsection{System Architecture}
 
-ConvoTree consists of four interconnected components that operate on different timescales to maintain conversational coherence:
+ConvoTree's current implementation consists of several core components:
 
 \subsubsection{Real-Time Graph Construction}
-The core API processes each dialogue turn through a multi-stage pipeline. When a new message arrives via the \texttt{/api/compress} endpoint, the system employs a two-phase knowledge extraction process:
+The system processes each dialogue turn through a knowledge extraction pipeline. When a new message is received through the command-line interface, the system performs the following:
 
-\textbf{Phase 1: Entity and Relation Extraction.} A lightweight entity and relation extractor identifies salient facts from the current turn, formatting them as RDF triples $(subject, predicate, object)$. The extractor uses a combination of named entity recognition (NER) and dependency parsing to identify entities and their relationships within the utterance.
+\textbf{Entity and Relation Extraction:} The system uses LLM prompting to identify salient facts from the current turn, formatting them as RDF triples $(subject, predicate, object)$. This approach leverages the language model's understanding to extract entities and relationships.
 
-\textbf{Phase 2: Neural Consolidation.} A neural consolidation module merges these facts with the existing conversation graph, resolving entity coreferences and updating relationship weights based on recency and importance. The module employs a graph neural network (GNN) to propagate information across related entities and determine optimal merge strategies.
+\textbf{Graph Integration:} Extracted facts are added to the SQLite-backed knowledge graph. The system uses simple string matching and similarity heuristics to identify potential entity matches, though more sophisticated coreference resolution remains future work.
 
-This dynamic graph construction maintains computational efficiency through incremental updates, avoiding the need to reconstruct the entire graph at each turn.
+The current implementation adds new triples directly to the database without complex optimization, providing a foundation for future incremental update strategies.
 
 \subsubsection{Neural Memory Consolidation}
-ConvoTree's distinctive feature is its neural ``dreaming'' process that periodically consolidates conversation memory during idle periods. This consolidation engine implements a three-phase cycle inspired by biological memory formation:
+ConvoTree implements a simplified ``dreaming'' process that consolidates conversation memory through LLM-powered reasoning:
 
-\textbf{Replay Phase:} The system reconstructs conversation segments from the knowledge graph, generating synthetic dialogue exchanges that capture key relationship patterns. This phase uses a graph-to-text generation model to create plausible conversation snippets that preserve important factual content while reducing redundancy.
+\textbf{Current Implementation:} The system uses OpenAI GPT models to analyze the knowledge graph and identify potential relationships between entities. When the \texttt{/dream} command is invoked, the system:
+- Retrieves entities from the knowledge graph
+- Identifies similar entities through embedding similarity
+- Prompts the LLM to discover implicit relationships
+- Updates the graph with newly discovered connections
 
-\textbf{Consolidation Phase:} A specialized transformer model processes these reconstructed conversations alongside the original transcripts, identifying stable patterns and compressing redundant information. The model employs attention mechanisms to weight the importance of different conversation elements and determines which information should be preserved versus compressed.
-
-\textbf{Integration Phase:} Consolidated memories are integrated into a hierarchical knowledge representation that balances detail preservation with storage efficiency. Recent information maintains high granularity, while older information is progressively abstracted into higher-level relationship patterns.
+\textbf{Future Enhancements:} The current implementation provides a foundation for more sophisticated consolidation approaches, including temporal abstraction, progressive compression, and hierarchical memory organization.
 
 \subsubsection{LLM-Powered Reasoning System}
-The reasoning component bridges graph-structured memory with natural language generation through a hybrid architecture:
+The current implementation provides basic knowledge-augmented interaction:
 
-\textbf{Retrieval Stage:} When processing queries via \texttt{/api/chat}, the system first retrieves relevant graph neighborhoods using learned embedding similarity. Graph nodes and edges are embedded using a pre-trained knowledge graph embedding model, enabling efficient similarity-based retrieval.
+\textbf{Knowledge Retrieval:} When processing user queries through the CLI, the system can access the stored knowledge graph to retrieve relevant facts and relationships.
 
-\textbf{Integration Stage:} Retrieved structural features are combined with compressed conversation summaries and current context. The system uses cross-attention mechanisms to align graph-based information with textual content.
+\textbf{Context Integration:} Retrieved knowledge is combined with conversation history to maintain context across sessions. The current implementation uses simple concatenation, with more sophisticated integration methods planned for future versions.
 
-\textbf{Generation Stage:} The integrated representation is fed to a fine-tuned language model that generates contextually appropriate responses. The model architecture includes specialized attention heads for processing graph-structured inputs alongside traditional textual attention.
+\textbf{Response Generation:} The system uses standard OpenAI API calls with retrieved context included in the prompt. Advanced techniques for graph-aware generation remain areas for future research.
 
 \subsubsection{Long-Term Context Management}
-ConvoTree maintains conversation continuity across extended time periods through a multi-resolution memory hierarchy:
+The current implementation uses a simplified persistence model:
 
-\textbf{Short-term Memory (Hours):} Recent conversations are stored with full fidelity, including complete dialogue history and detailed graph representations.
+\textbf{SQLite Storage:} All conversation data and knowledge graph triples are stored in a SQLite database with equal priority. The system does not currently implement temporal hierarchies or progressive compression.
 
-\textbf{Medium-term Memory (Days-Weeks):} Interactions are compressed into structured summaries with preserved key relationships. The system maintains a balance between storage efficiency and information retention through adaptive compression rates.
-
-\textbf{Long-term Memory (Months+):} Patterns are distilled into learned relationship embeddings that influence future consolidation decisions without requiring explicit storage of conversation details.
+\textbf{Future Work:} Multi-resolution memory hierarchies, temporal abstraction, and adaptive compression strategies represent important areas for future development to enable truly scalable long-term conversation management.
 
 \subsection{Implementation Specifications}
 
-\subsubsection{API Design}
-ConvoTree exposes a RESTful API with the following core endpoints:
+\subsubsection{Command-Line Interface}
+ConvoTree provides a CLI for interaction and experimentation:
 
 \begin{itemize}
-\item \texttt{POST /api/compress}: Processes new dialogue turns and updates the conversation graph. Accepts JSON payload with message content, speaker identification, and optional metadata.
-\item \texttt{POST /api/chat}: Generates responses based on current conversation state and retrieved memory. Returns both the response text and relevant graph visualizations.
-\item \texttt{GET /api/status}: Provides system status including memory usage, consolidation queue status, and performance metrics.
-\item \texttt{GET /api/graph}: Returns conversation graph in various formats (GraphML, JSON, PNG visualization).
+\item \texttt{/dream}: Triggers the LLM-powered consolidation process to discover relationships
+\item \texttt{/knowledge}: Displays the current knowledge graph contents
+\item \texttt{/reason}: Performs reasoning over the knowledge graph
+\item \texttt{/compress}: Initiates knowledge compression (simplified implementation)
+\item \texttt{/help}: Shows available commands and usage information
 \end{itemize}
+
+\textbf{Future API Development:} A RESTful API with endpoints for programmatic access remains an important goal for production deployment.
 
 \subsubsection{Data Structures}
 The system employs several key data structures:
@@ -415,45 +420,57 @@ The system employs several key data structures:
 \textbf{Consolidation Queue:} Priority queue for managing background consolidation tasks, with priorities based on conversation importance, recency, and available computational resources.
 
 \subsubsection{Performance Optimizations}
-Several optimizations enable production deployment:
+The current implementation includes basic optimizations:
 
-\textbf{Incremental Processing:} Graph updates use incremental algorithms to avoid full recomputation. Only affected subgraphs are modified when new information arrives.
+\textbf{Basic Caching:} Simple caching mechanisms are implemented for knowledge graph access to reduce database queries.
 
-\textbf{Asynchronous Consolidation:} Memory consolidation runs asynchronously during conversation pauses, ensuring minimal impact on response latency.
-
-\textbf{Caching Strategies:} Frequently accessed graph neighborhoods and conversation summaries are cached using LRU policies with periodic invalidation.
-
-\textbf{Resource Management:} The system includes adaptive resource allocation based on conversation load and available hardware resources.
+\textbf{Future Optimizations:} Production deployment would require implementing incremental graph processing, asynchronous consolidation, sophisticated caching strategies, and adaptive resource management. These represent important areas for future development.
 
 \subsection{Evaluation Framework}
 
 \subsubsection{Datasets}
-ConvoTree evaluation employs both existing benchmarks and custom datasets:
+A comprehensive evaluation framework has been designed but not yet implemented:
 
-\textbf{MultiWOZ Extension:} Extended conversations created by chaining multiple MultiWOZ dialogues with bridging context to create realistic long-form interactions.
+\textbf{Proposed Datasets:} Future evaluation would utilize extended MultiWOZ conversations, customer service logs, and synthetic long conversations to test memory consolidation effectiveness.
 
-\textbf{Customer Service Logs:} Anonymized customer service conversations spanning multiple sessions, providing realistic examples of long-term context dependencies.
-
-\textbf{Synthetic Long Conversations:} Generated conversations with known ground truth for controlled evaluation of memory retention and consolidation effectiveness.
+\textbf{Current Status:} The system currently undergoes functional testing only. Systematic performance evaluation, benchmarking, and comparison with baseline systems remain important future work.
 
 \subsubsection{Metrics}
-Evaluation focuses on three primary dimensions:
+Proposed evaluation methodology would focus on:
 
-\textbf{Memory Efficiency:} Compression ratio (original size / compressed size), factual accuracy preservation, and retrieval precision for historical information.
+\textbf{Memory Management:} Measuring knowledge retention, consolidation effectiveness, and storage efficiency across different conversation types and lengths.
 
-\textbf{Response Quality:} Human preference ratings, consistency scores across conversation segments, and factual accuracy of generated responses.
+\textbf{System Performance:} Assessing response quality, consistency maintenance, and computational efficiency for extended dialogues.
 
-\textbf{Computational Performance:} Response latency, memory usage, consolidation throughput, and scalability metrics across different conversation lengths.
+\textbf{Implementation Priority:} Developing robust evaluation metrics and benchmarks represents a critical next step for validating the system's effectiveness.
 
-\subsection{Future Extensions}
+\section{Future Work}
 
-The modular architecture supports several planned extensions:
+The ConvoTree prototype provides a foundation for several important research directions:
+
+\subsection{System Development}
+
+\textbf{RESTful API:} Developing production-ready API endpoints for programmatic access, including real-time processing, batch operations, and system monitoring capabilities.
+
+\textbf{Performance Optimization:} Implementing incremental graph processing, asynchronous consolidation, sophisticated caching strategies, and adaptive resource management for scalable deployment.
+
+\textbf{Three-Phase Consolidation:} Developing the biologically-inspired replay-consolidation-integration cycle described in our design, including specialized models for each phase.
+
+\subsection{Evaluation and Benchmarking}
+
+\textbf{Comprehensive Metrics:} Implementing systematic evaluation frameworks for measuring memory efficiency, response quality, and computational performance across different conversation types and lengths.
+
+\textbf{Benchmark Datasets:} Creating standardized datasets for long-form conversation evaluation, including extended MultiWOZ conversations, customer service logs, and synthetic conversations with known ground truth.
+
+\textbf{Comparative Studies:} Conducting rigorous comparisons with baseline systems to quantify the benefits of graph-enhanced memory consolidation.
+
+\subsection{Advanced Features}
+
+\textbf{Temporal Memory Hierarchies:} Implementing multi-resolution memory management with progressive abstraction from short-term to long-term storage.
 
 \textbf{Federated Learning:} Extending consolidation across multiple conversation instances while preserving privacy through differential privacy techniques.
 
 \textbf{Multimodal Integration:} Supporting visual and audio inputs through specialized graph node types and cross-modal attention mechanisms.
-
-\textbf{Domain Adaptation:} Automatic adaptation to new conversation domains through meta-learning approaches applied to the consolidation process.
 
 \textbf{Explainability:} Enhanced visualization and explanation capabilities for understanding consolidation decisions and graph evolution patterns.
 
