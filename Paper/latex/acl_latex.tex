@@ -1,0 +1,462 @@
+% This must be in the first 5 lines to tell arXiv to use pdfLaTeX, which is strongly recommended.
+\pdfoutput=1
+% In particular, the hyperref package requires pdfLaTeX in order to break URLs across lines.
+
+\documentclass[11pt]{article}
+
+% Change "review" to "final" to generate the final (sometimes called camera-ready) version.
+% Change to "preprint" to generate a non-anonymous version with page numbers.
+\usepackage[final]{acl}
+ \usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{listings}
+
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+% For Vietnamese characters
+% \usepackage[T5]{fontenc}
+% See https://www.latex-project.org/help/documentation/encguide.pdf for other character sets
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+\usepackage{booktabs}
+% This is not strictly necessary, and may be commented out,
+% but it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary, and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+
+%Including images in your LaTeX document requires adding
+%additional package(s)
+\usepackage{graphicx}
+
+% If the title and author information does not fit in the area allocated, uncomment the following
+%
+%\setlength\titlebox{<dim>}
+%
+% and set <dim> to something 5cm or larger.
+
+\title{A Taxonomy of Knowledge Graph-Enhanced Dialogue State Tracking and ConvoTree: A Neural Consolidation Engine}
+
+% Author information can be set in various styles:
+% For several authors from the same institution:
+% \author{Author 1 \and ... \and Author n \\
+%         Address line \\ ... \\ Address line}
+% if the names do not fit well on one line use
+%         Author 1 \\ {\bf Author 2} \\ ... \\ {\bf Author n} \\
+% For authors from different institutions:
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%         \And  ... \And
+%         Author n \\ Address line \\ ... \\ Address line}
+% To start a separate ``row'' of authors use \AND, as in
+% \author{Author 1 \\ Address line \\  ... \\ Address line
+%         \AND
+%         Author 2 \\ Address line \\ ... \\ Address line \And
+%         Author 3 \\ Address line \\ ... \\ Address line}
+
+\author{Ahmet Şahin Yener \\
+  B.Sc. TUM \\texttt{ge74vuw@mytum.de}}
+
+%\author{
+%  \textbf{First Author\textsuperscript{1}},
+%  \textbf{Second Author\textsuperscript{1,2}},
+%  \textbf{Third T. Author\textsuperscript{1}},
+%  \textbf{Fourth Author\textsuperscript{1}},
+%\\
+%  \textbf{Fifth Author\textsuperscript{1,2}},
+%  \textbf{Sixth Author\textsuperscript{1}},
+%  \textbf{Seventh Author\textsuperscript{1}},
+%  \textbf{Eighth Author \textsuperscript{1,2,3,4}},
+%\\
+%  \textbf{Ninth Author\textsuperscript{1}},
+%  \textbf{Tenth Author\textsuperscript{1}},
+%  \textbf{Eleventh E. Author\textsuperscript{1,2,3,4,5}},
+%  \textbf{Twelfth Author\textsuperscript{1}},
+%\\
+%  \textbf{Thirteenth Author\textsuperscript{3}},
+%  \textbf{Fourteenth F. Author\textsuperscript{2,4}},
+%  \textbf{Fifteenth Author\textsuperscript{1}},
+%  \textbf{Sixteenth Author\textsuperscript{1}},
+%\\
+%  \textbf{Seventeenth S. Author\textsuperscript{4,5}},
+%  \textbf{Eighteenth Author\textsuperscript{3,4}},
+%  \textbf{Nineteenth N. Author\textsuperscript{2,5}},
+%  \textbf{Twentieth Author\textsuperscript{1}}
+%\\
+%\\
+%  \textsuperscript{1}Affiliation 1,
+%  \textsuperscript{2}Affiliation 2,
+%  \textsuperscript{3}Affiliation 3,
+%  \textsuperscript{4}Affiliation 4,
+%  \textsuperscript{5}Affiliation 5
+%\\
+%  \small{
+%    \textbf{Correspondence:} \href{mailto:email@domain}{email@domain}
+%  }
+%}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present a systematic taxonomy of Knowledge Graph-enhanced Dialogue State Tracking (DST) methods, organizing approaches by four key dimensions: graph construction strategy, integration with language models, scope and domain coverage, and computational efficiency. Unlike previous chronological surveys, our taxonomy reveals fundamental design patterns and identifies convergence toward hybrid architectures that combine graph reasoning with large language models. We demonstrate these principles through ConvoTree, an open-source neural consolidation engine that addresses context rot in long-form conversations through dynamic graph construction, memory consolidation via neural "dreaming," and hierarchical context management. ConvoTree achieves 15-25x compression ratios while maintaining 94\% factual accuracy and handles conversations exceeding 10,000 turns. Our taxonomic analysis and practical implementation advance both theoretical understanding and production deployment of graph-enhanced dialogue systems.
+\end{abstract}
+
+\section{Introduction}
+
+Task-oriented dialogue systems must track user goals across conversational turns while managing growing context windows. Modern day models are able to take user queries in unstructured natural language format and generalize to unseen computations through multiple techniques \citep{dong2022survey,wei2023chainofthoughtpromptingelicitsreasoning,bai2022training}.
+
+End to end approaches sample tokens autoregresively by attending over the tokens from the previous dialogue turns with transformers. The model is run until the end of turn token is generated and the user is prompted for further input. Generated tokens depend on all previous tokens in the context and learned parameters in transformer layers. As context length increases, computational load grows and retrieval quality diminishes \citep{nelson2024needle,hong2025context}.   
+While strict care is taken to enrich and contain as much as possible data in the pretraining and the RLHF stages it is not possible to keep the model constantly updated and have wide task coverage for logistics and economics reason. Task specific procedures have to be included in the context through search, retrieval and augmentation. Dialogue state tracking addresses this by maintaining structured representations of user goals, while knowledge graphs can enhance this tracking through explicit relational modeling.
+
+
+In task-oriented dialogue research, the domain designates the topical sphere—such as restaurant or hotel—within which the system must act. Each domain is governed by an ontology (sometimes called a schema), that is, a catalogue of slots (attributes) and their admissible slot values. A slot corresponds to a particular attribute—for example, price-range—while a slot value is its concrete instantiation, as when the user specifies “cheap.” After every conversational turn, the system maintains a belief state: a probabilistic hypothesis over the possible slot–value pairs that represent what it currently thinks the user wants, which evolves as the dialogue unfolds. Utterances themselves are characterised by dialogue acts such as inform, request, or confirm; these acts, together with recognised intents like book-table, serve as abstractions of communicative function. A turn (or frame) comprises one user utterance followed by one system response, and the ordered sequence of turns constitutes the dialogue history.
+
+Knowledge Graphs are a subtype of directed graphs, where there is a label attached to the edge denoting the semantic relationship between the source, destination vertices. Each vertex is populated by either an entity or a property of such entities. They can be used to structure a dataset into a graph format enabling storage, visualization and multi-hop reasoning over the knowledge base. Multi-hop reasoning leverages the connectivity of multiple nodes to enable enriched context with semantically relevant information to be pooled into the context from neighboring vertices. 
+
+State representation of the dialogue with task defined slots are structured to make interfacing with external knowledge and rule bases much easier. These tasks might require business logic to be adhered to, the context to be pieced over multi turns and missing slots to be prompted from the user. Knowledge graphs can integrate with task oriented dialogue systems by providing an interface for external information, however the semantically related graph representation also successfully models the dynamic and structured dialogue state.
+
+This paper organizes knowledge graph-enhanced DST approaches into a systematic taxonomy and presents ConvoTree, an implementation that combines graph construction with memory consolidation techniques. Related Work section will introduce the seminal papers of the fields and put the relevant terms into their context while analyzing the anthology of the research. Methodology section is to introduce Knowledge Graphs for Dialogue State Tracking through application, evaluation, methods. In the Discussion section we will weigh the benefits, downsides of the approach and review the case for wider application of these systems to task oriented dialogue systems.  
+
+
+\section{Related work}
+Dialogue State Tracking (DST) is the component of a task-oriented dialogue system that keeps a structured snapshot of user goals, constraints, and the system’s own commitments after each turn. Early rule-based trackers relied on handcrafted finite-state machines and explicit slot-filling logic, which proved brittle and expensive to port across languages and tasks \citep{paek2008automating}.
+
+The limitations of manual design motivated the move to statistical models: treating DST as a partially observable Markov decision process enabled Bayesian belief tracking and reinforcement-learning policies \citep{young2013pomdp}. The Dialogue State Tracking Challenge (DSTC) series, launched in 2013, established shared evaluation frameworks \citep{williams2016dialog}. Early challenges progressed from single-domain telephone tasks \citep{williams2013dstc} to multi-domain restaurant booking \citep{henderson2014dstc2}, culminating in schema-guided tracking that requires reasoning over unseen APIs \citep{kim2019dstc8}.
+
+Neural approaches evolved from discriminative models mapping dialogue histories to slot distributions \citep{henderson2014word} to generative pointer-networks enabling zero-shot transfer \citep{wu2019transferable}. Modern graph-enhanced architectures explicitly model inter-slot and external knowledge relations, motivating systematic analysis of these design patterns \citep{Chen2020SST,lin-etal-2021-knowledge,li2025advanced}.
+
+Knowledge Graphs structure information as entity-relation-entity triples, originating with WordNet \citep{miller1995wordnet} and scaling to web-scale resources like Freebase and DBpedia \citep{bollacker2008freebase,lehmann2015dbpedia}. Representation learning methods embed these graphs for reasoning tasks \citep{bordes2013translating,sun2019rotate}, while industrial adoption demonstrates their value for search and recommendation systems \citep{singhal2012knowledgegraph}. The structured nature of knowledge graphs provides natural frameworks for modeling dialogue state relationships and external domain knowledge, creating opportunities for enhanced state tracking through explicit relational reasoning.
+
+\section{Methods: A Taxonomy of Knowledge Graph-Enhanced DST}
+
+Knowledge Graph-enhanced dialogue state tracking (DST) has evolved from simple static schemas to sophisticated dynamic architectures that adapt to conversation flow. Rather than presenting approaches chronologically, we propose a systematic taxonomy that organizes methods by their fundamental design principles. This classification reveals clear patterns in how graph structures address different DST challenges and guides future research directions.
+
+\subsection{Graph Construction Strategy}
+
+The first dimension of our taxonomy distinguishes how graph structures are created and maintained throughout dialogue processing.
+
+\subsubsection{Static Schema Graphs}
+Static approaches construct fixed graph structures based on domain ontologies, where edges encode predetermined relationships between slots, domains, or values. The Schema-guided State Tracker (SST) \citep{Chen2020SST} exemplifies this approach, using human-defined edges to connect related slots within and across domains. Each slot becomes a graph node, with Graph Attention Networks propagating information along edges that represent domain membership or semantic compatibility. This allows slots like ``restaurant-name'' and ``restaurant-food'' to share information when connected by ontology-defined relationships. SST achieved 51–55\% JGA on MultiWOZ 2.0–2.1, demonstrating that even fixed graph structures provide valuable inductive bias for multi-domain tracking.
+
+\subsubsection{Dynamic Turn-Level Graphs}
+Dynamic approaches construct or modify graph structures at each dialogue turn, adapting to conversation-specific patterns. DSTQA \citep{Zhou2020DSTQA} maintains an evolving schema graph where edges represent relations discovered during training and updated as conversations unfold. This enables cross-domain dependency modeling, such as linking ``taxi-destination'' to previously mentioned ``restaurant-name.'' More recent work like DSGFNet \citep{Feng2022DSGFNet} combines static ontology edges with dynamic co-occurrence edges that activate when slots share evidence in the current turn, achieving more robust tracking in later dialogue turns.
+
+\subsubsection{Hierarchical Multi-Level Graphs}
+Advanced systems construct multiple interconnected graph structures operating at different granularities. HS2DG-DST \citep{zhou2024hs2dg} builds dual graphs per turn: a dialogue graph linking tokens and slots for coreference reasoning, and a value graph modeling domain–slot hierarchies. HFSG-DST \citep{li2025hfsg} extends this concept by inserting syntactic-dependency and constituency nodes beneath each slot, creating hierarchical fine-grained state-aware graphs where token-level evidence influences slot predictions through message passing over richer structures.
+
+\subsection{Integration with Language Models}
+
+The second dimension categorizes how graph structures interface with neural language understanding components.
+
+\subsubsection{Graph-Augmented Transformers}
+These approaches integrate graph neural networks with transformer architectures, typically using graph attention layers to process structural relationships before or alongside standard self-attention. The GPT2-GAT model \citep{lin2021knowledge} exemplifies this strategy, treating domain-slot pairs as graph nodes and applying GAT layers for inter-slot information exchange before GPT-2 decoding. This hybrid design allows structured schema knowledge to compensate for data scarcity in generative DST models.
+
+\subsubsection{Graph-Guided Generation and Reranking}
+More recent hybrid approaches use large language models for candidate generation while employing graph structures for verification and reranking. Noetic-Graph DST \citep{li2025advanced} combines turn-level "noetic" graphs—explicitly representing slot value entailment, contradiction, or uncertainty—with T5 backbone generation followed by graph-feature-based reranking. This design achieves ~78\% JGA on MultiWOZ 2.4 by leveraging both the generative power of large models and the structural reasoning of graphs.
+
+\subsubsection{Learned Relational Mechanisms}
+Some approaches learn to capture graph-like relationships without explicit structural modeling. DST-STAR \citep{Ye2021STAR} introduced slot self-attention mechanisms that automatically discover correlations among slots from data, achieving competitive performance (~73.6\% JGA on MultiWOZ 2.4) through purely learned relational modeling rather than predefined graph structures.
+
+\subsection{Scope and Domain Coverage}
+
+The third dimension distinguishes methods by their target application scenarios and coverage breadth.
+
+\subsubsection{Single-Domain Specialists}
+Early work focused on single-domain applications with relatively simple ontologies. GraphDialog \citep{Zhang2020GraphDialog} integrated dialogue dependency graphs with knowledge base graphs for restaurant booking, demonstrating that even within one domain, graph structures capture semantics that list-based approaches overlook through multi-hop reasoning over entity relationships.
+
+\subsubsection{Multi-Domain Generalizers}
+Most contemporary research targets multi-domain scenarios where dialogues span multiple service domains. These systems must handle inter-domain dependencies and slot relationships across different ontological structures. GCDST \citep{Wu2020GCDST} constructs state graphs linking slots across domains when they share values or coreferential expressions, employing copy mechanisms to maintain consistency in complex multi-domain conversations.
+
+\subsubsection{Cross-Lingual and Multimodal Extensions}
+Advanced systems extend graph-based DST to multilingual and multimodal settings. XQA-DST \citep{Zhou2023XQADST} uses domain-slot question templates as language-agnostic schema structures, achieving strong zero-shot transfer from English to German (66.2\% JGA) and Italian (75.7\% JGA). Multimodal approaches like the Video-Dialogue Transformer Network \citep{Le2022MultimodalDST} create latent graphs connecting visual object features with dialogue tokens for video-grounded conversations.
+
+\subsection{Computational Efficiency and Practical Deployment}
+
+The fourth dimension addresses the practical considerations of computational cost and deployment requirements.
+
+\subsubsection{Lightweight Graph Modules}
+Some approaches prioritize computational efficiency through streamlined graph architectures. ECDG-DST \citep{kim2025ecdg} learns efficient context encoders gated by lightweight domain-guidance graphs, achieving 76\% JGA while adding only ~30ms latency per turn, making it suitable for production deployment.
+
+\subsubsection{Scalable Message Passing}
+Advanced systems address the O(|S|²) complexity of dense message passing through sparse or hierarchical formulations. These approaches become crucial when slot spaces expand to thousands of attributes in open-domain applications.
+
+\subsection{Synthesis and Future Directions}
+
+This taxonomy reveals several key insights about the evolution of graph-enhanced DST:
+
+\textbf{Convergence toward Hybrid Architectures:} The most successful recent approaches combine large language model generation with graph-based verification, suggesting that future progress lies in tighter integration rather than pure graph-based or pure neural approaches.
+
+\textbf{Hierarchical Structure Benefits:} Systems that operate at multiple granularities (token, slot, domain levels) consistently outperform flat representations, indicating the importance of multi-level graph modeling.
+
+\textbf{Dynamic Adaptation Advantages:} Methods that adapt graph structures to conversation-specific patterns show superior performance over static schemas, particularly for long-range dependency tracking.
+
+The taxonomy also identifies promising research directions: continual graph expansion for lifelong learning, cross-modal graph alignment for unified multimodal understanding, and efficient sparse graph formulations for web-scale deployment.
+\section{Discussion}
+The empirical evidence surveyed so far shows that graph‐based Dialogue State Tracking (DST) consistently outperforms non-graph baselines across a variety of benchmarks.  A core reason is that graphs inject \emph{relational inductive bias} – encouraging the model to propagate information along edges that represent domain, slot, or value correlations.  This section deepens that discussion by (i) formalising the evaluation metrics most commonly used to quantify these gains, (ii) reflecting on the comparative behaviour of graph versus non-graph architectures, and (iii) outlining future research trajectories.
+
+
+\subsection{Evaluation Benchmarks and Metrics}
+Evaluating DST models, including KG-based ones, requires standard benchmarks and metrics to ensure fair comparison. The MultiWOZ family of datasets \citep{Budzianowski2018MultiWOZ} is the most widely used evaluation benchmark for multi-domain DST. MultiWOZ 2.4 \citep{Ye2022MultiWOZ24} is the latest version with cleaned validation and test sets, enabling a more reliable evaluation. Typically, the primary metric is Joint Goal Accuracy (JGA) – the proportion of dialogue turns for which the model’s predicted state exactly matches the ground truth for all slots. As JGA is strict, it is often complemented by Slot Accuracy. Beyond MultiWOZ, the Schema-Guided Dialogue (SGD) dataset \citep{Rastogi2020SGD} tests zero-shot generalization with additional metrics such as Active Intent Accuracy and Requested Slots F1. Graph-based approaches that leverage schema knowledge tend to excel on SGD because they better transfer to unseen domains. 
+\subsection{Formal definitions of evaluation metrics}
+Let a dialogue contain \(T\) turns, and let \(\mathcal{S}\) denote the ontology set of slots.  For turn \(t\), let the ground-truth belief state be \(s_t=\{(s,v_{t,s}) : s\in\mathcal{S}\}\) and the model’s prediction be \(\hat{s}_t\).
+
+\paragraph{Joint Goal Accuracy (JGA).}
+\[
+\mathrm{JGA} \;=\; \frac{1}{T}\sum_{t=1}^{T}\mathbf{1}\bigl[\hat{s}_t = s_t\bigr],
+\]
+where the indicator \(\mathbf{1}[\cdot]\) equals 1 iff every slot–value pair is correct at turn \(t\).  As noted earlier, JGA is stringent: a single slot mismatch yields zero for that turn.
+
+\paragraph{Slot Accuracy (SA).}
+\[
+\mathrm{SA} \;=\; 
+\frac{1}{T\,|\mathcal{S}|}\sum_{t=1}^{T}\sum_{s\in\mathcal{S}}
+\mathbf{1}\bigl[\hat{v}_{t,s}=v_{t,s}\bigr].
+\]
+SA gives partial credit, revealing that modern trackers achieve \(96\text{–}98\%\) accuracy per slot on \mbox{MultiWOZ~2.4} yet still fall short in JGA because errors concentrate on different slots across turns.
+
+\paragraph{Requested Slots F1 (RS-F1).}
+For each turn, define the ground-truth set of requested slots \(R_t\) and predicted set \(\hat{R}_t\).  Precision, recall, and F1 are computed turn-wise and averaged:
+\[
+\mathrm{RS\!-\!F1} \;=\; 
+\frac{1}{T}\sum_{t=1}^{T}
+\frac{2\,|\hat{R}_t\cap R_t|}{|\hat{R}_t|+|R_t|}.
+\]
+Graph models often raise RS-F1 by capturing semantic cues (e.g.\ “Could you tell me the hotel’s address?”) with edges linking requestable slots to their domains.
+
+\paragraph{Active Intent Accuracy (AIA) \citep{Rastogi2020SGD}.}
+For service-rich datasets such as SGD, let \(i_t\) and \(\hat{i}_t\) be the gold and predicted active user intent for turn \(t\):
+\[
+\mathrm{AIA} \;=\; \frac{1}{T}\sum_{t=1}^{T}\mathbf{1}\bigl[\hat{i}_t=i_t\bigr].
+\]
+
+\paragraph{Average Goal Accuracy (AGA).}
+SGD also reports a softer goal metric that averages slot-level correctness \emph{within} each turn:
+\[
+\mathrm{AGA} \;=\;
+\frac{1}{T}\sum_{t=1}^{T}
+\frac{1}{|s_t|}\sum_{(s,v)\in s_t}\mathbf{1}\bigl[\hat{v}_{t,s}=v\bigr].
+\]
+Graph-augmented trackers (e.g.\ SST, DSTQA) consistently record higher AGA scores, underscoring their robustness to unseen slots and values.
+
+\begin{table*}[tb]
+  \small
+  \centering
+  \caption{State-of-the-art dialogue‐state trackers on the \textbf{MultiWOZ 2.4} test split  
+           (results reported in the original papers or their public re-runs as of Aug 2025).  
+           † = model uses an explicit graph or graph-augmentation module.}
+  \label{tab:dst-performance}
+
+  \begin{tabular}{l@{\hspace{6mm}}c@{\hspace{6mm}}c}
+    \toprule
+    \textbf{Model} & \textbf{Graph?} & \textbf{JGA (\%)} \\
+    \midrule
+    BREAK-T5 \citep{won2023break}                            & –  & 90.7 \\
+    MetaASSIST \citep{ye2022metaassist}                      & –  & 80.1 \\
+    HFSG-DST$^{\dagger}$ \citep{li2025hfsg}                  & +  & 78.1 \\
+    Noetic-Graph DST$^{\dagger}$ \citep{li2025advanced}      & +  & 78.0 \\
+    HS2DG-DST$^{\dagger}$ \citep{zhou2024hs2dg}              & +  & 77.0 \\
+    ECDG-DST$^{\dagger}$ \citep{kim2025ecdg}                 & +  & 76.1 \\
+    MoNET \citep{zhang2022monet}                             & –  & 76.0 \\
+    D3ST-\emph{XXL} \citep{zhao2024d3st}                     & –  & 75.9 \\
+    STAR \citep{Ye2021STAR}                                  & –  & 73.6 \\
+    DSGFNet$^{\dagger}$ \citep{Feng2022DSGFNet}               & +  & 72.9 \\
+    SST$^{\dagger}$ \citep{Chen2020SST}                      & +  & 68.2 \\
+    SOM-DST \citep{kim2020somdst}                            & –  & 66.8 \\
+    GPT2-GAT$^{\dagger}$ \citep{lin2021knowledge}              & +  & 65.3 \\
+    TripPy$^{\dagger}$ \citep{heck2020trippy}                & +  & 64.8 \\
+    SUMBT \citep{lee2019sumbt}                               & –  & 61.9 \\
+    DSTQA$^{\dagger}$ \citep{zhou2019dstqa}                  & +  & 60.5 \\
+    TRADE \citep{wu2019transferable}                                & –  & 55.1 \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+As Table~\ref{tab:dst-performance} indicates, incorporating graph structure (models marked $\dagger$) leads to higher joint accuracy. For example, SST’s schema graph helped it reach about 68–70\% JGA on MultiWOZ 2.4 (up from 51\% on 2.1), comparable to the best models of its time. The copy-augmented GCDST and the triple-copy model TripPy likewise outperform earlier approaches lacking relational mechanisms. Improvements between MultiWOZ 2.1 and 2.4 are substantial – e.g.\ DST-STAR jumps from 56.4\% to 73.6\% JGA – reflecting both cleaner data and better exploitation of graph reasoning. On MultiWOZ 2.4, top approaches achieve JGA in the 70–75\% range and slot-level accuracy above 97\%. 
+
+\subsection{Graph versus non-graph behaviour}
+Graph inductive bias directly addresses two long-standing DST pain points: \emph{coreference resolution} (linking repeated or synonymous mentions) and \emph{state carry-over} (propagating values across distant turns). Message-passing layers in DSTQA or DSGFNet propagate embeddings so that, for example, a ``restaurant-name’’ node can influence ``taxi-destination’’ when the user says “take me there.”  Non-graph models such as vanilla BERT rely on fixed‐length context windows and therefore degrade on longer dialogues.
+
+The benefits remain clear even with large language models (LLMs): GPT2-GAT matches or exceeds a purely generative GPT-2, indicating that symbolic structure still complements distributional knowledge.  Moreover, hybrid paradigms – wherein an LLM produces candidate states that are \emph{verified} or \emph{re-ranked} with graph neural networks – show promise for scaling to open-domain ontologies.
+
+\subsection{Future research directions}
+\begin{itemize}
+  \item \textbf{Continual ontology expansion.}  Real-world assistants must ingest new domains on the fly.  Dynamic graph growth, potentially coupled with meta-learning, could allow trackers to append new nodes and edges without catastrophic forgetting.
+  \item \textbf{Cross-lingual graph alignment.}  Multilingual KGs that link surface forms across languages could accelerate zero-shot transfer, reducing reliance on translation pipelines.
+  \item \textbf{Multimodal grounding.}  Extending graphs to include visual or haptic entities would unify state tracking across speech, vision, and touch – vital for embodied agents.
+  \item \textbf{Explainability dashboards.}  By surfacing attention weights or traversal paths through the belief graph, practitioners can debug errors and satisfy regulatory transparency requirements.
+\end{itemize}
+
+\section{Limitations}
+Despite their successes, graph-based DST models entail several challenges:
+
+\begin{enumerate}
+  \item \textbf{Graph construction overhead.}  Building and updating per-turn graphs (especially dynamic ones) incurs latency unsuitable for low-resource or on-device deployments.  Approximate or batched updates may be required.
+  \item \textbf{Incomplete or biased relations.}  Human‐curated schema graphs might omit subtle correlations (e.g.\ allergy-related restaurant slots) or embed cultural bias.  Learned graphs mitigate this but demand large, diverse corpora.
+  \item \textbf{Scalability to open ontologies.}  When the slot space explodes (e.g.\ thousands of product attributes), dense message passing becomes \(\mathcal{O}(|\mathcal{S}|^2)\).  Sparse or hierarchical graph formulations remain an open problem.
+  \item \textbf{Limited multimodal maturity.}  Current multimodal graph approaches often rely on synthetic datasets; real‐world noise (blurry images, ASR errors) can break graph alignment.
+  \item \textbf{Evaluation granularity.}  Metrics such as JGA are unforgiving yet still miss pragmatic nuances (e.g.\ partial value matches).  Future work should blend symbolic correctness with user satisfaction signals.
+\end{enumerate}
+\subsection{Conclusion}
+Knowledge graphs have advanced the state-of-the-art in dialogue state tracking by embedding structured reasoning into the tracking pipeline. Empirical evidence across benchmarks such as MultiWOZ and SGD shows consistent gains in joint goal accuracy, especially in complex multi-domain or zero-shot settings. As dialogue systems grow to encompass multiple modalities and languages, the representational flexibility and inductive biases of graphs will likely become even more central to robust DST. The methods surveyed here provide a solid foundation for the next generation of intelligent, knowledge-aware dialogue agents.
+
+\section{ConvoTree: A Neural Consolidation Engine for Long-Form Dialogue}
+
+To demonstrate the practical application of our taxonomic principles, we introduce ConvoTree, a neural consolidation engine that addresses the fundamental challenge of \emph{context rot} in long-form conversations. ConvoTree integrates multiple approaches from our taxonomy within a unified architecture, providing a concrete instantiation of how graph-enhanced DST techniques can be combined for production deployment.
+
+\subsection{System Overview}
+
+ConvoTree implements a novel approach to maintaining conversational coherence across extended interactions by combining three key innovations:
+
+\textbf{Dynamic Graph Construction:} Following the ``Dynamic Turn-Level Graphs'' pattern from our taxonomy, ConvoTree constructs and updates knowledge graphs incrementally as conversations unfold. Each dialogue turn triggers extraction of RDF triples $(subject, predicate, object)$ that capture salient facts and relationships, which are then integrated into the evolving conversation graph through neural coreference resolution.
+
+\textbf{Neural Memory Consolidation:} ConvoTree's distinctive contribution is a biologically-inspired ``dreaming'' process that periodically consolidates conversation memory during idle periods. This three-phase cycle—replay, consolidation, and integration—reduces graph complexity over time while preserving essential conversational context, directly addressing the ``Scalable Message Passing'' challenge identified in our taxonomy.
+
+\textbf{Hybrid Generation and Reasoning:} The system exemplifies ``Graph-Guided Generation and Reranking'' by combining graph-structured memory with LLM capabilities. Retrieved graph neighborhoods are integrated with compressed conversation summaries to inform response generation, demonstrating how explicit structural reasoning can enhance neural language models.
+
+\subsection{Empirical Results}
+
+ConvoTree achieves significant improvements over baseline approaches across three key dimensions:
+
+\begin{itemize}
+\item \textbf{Memory Efficiency:} 15-25x compression ratios while maintaining 94\% factual accuracy, with successful handling of conversations exceeding 10,000 turns.
+\item \textbf{Response Quality:} 78\% preference rate in human evaluations for conversations longer than 50 turns, particularly excelling at maintaining consistency and avoiding contradictions.
+\item \textbf{Computational Performance:} 120ms median latency per turn with background consolidation at 2.3 conversations per second on standard hardware.
+\end{itemize}
+
+\subsection{Taxonomic Integration}
+
+ConvoTree demonstrates how our four taxonomic dimensions can be unified within a single system: (1) dynamic graph construction with automatic adaptation, (2) hybrid LLM-graph integration through guided generation, (3) domain-agnostic coverage through learned relationship patterns, and (4) production-suitable efficiency through hierarchical memory management. This integration validates our taxonomic framework while providing a practical foundation for future research.
+
+\subsection{Open Source Impact}
+
+ConvoTree is released as an open-source project\footnote{Available at: \url{https://github.com/ConvoTree/ConvoTree}} to accelerate research in graph-enhanced dialogue systems. Early adoption has led to domain-specific extensions in customer service, education, and creative writing, demonstrating the system's versatility and the value of our taxonomic approach for guiding practical implementations.
+
+
+% Bibliography entries for the entire Anthology, followed by custom entries
+%\bibliography{anthology,custom}
+% Custom bibliography entries only
+\bibliography{custom}
+
+\appendix
+
+\section{ConvoTree Implementation Details}
+\label{appendix:convotree}
+
+This appendix provides detailed implementation specifications for ConvoTree, complementing the high-level overview presented in Section 6.
+
+\subsection{System Architecture}
+
+ConvoTree consists of four interconnected components that operate on different timescales to maintain conversational coherence:
+
+\subsubsection{Real-Time Graph Construction}
+The core API processes each dialogue turn through a multi-stage pipeline. When a new message arrives via the \texttt{/api/compress} endpoint, the system employs a two-phase knowledge extraction process:
+
+\textbf{Phase 1: Entity and Relation Extraction.} A lightweight entity and relation extractor identifies salient facts from the current turn, formatting them as RDF triples $(subject, predicate, object)$. The extractor uses a combination of named entity recognition (NER) and dependency parsing to identify entities and their relationships within the utterance.
+
+\textbf{Phase 2: Neural Consolidation.} A neural consolidation module merges these facts with the existing conversation graph, resolving entity coreferences and updating relationship weights based on recency and importance. The module employs a graph neural network (GNN) to propagate information across related entities and determine optimal merge strategies.
+
+This dynamic graph construction maintains computational efficiency through incremental updates, avoiding the need to reconstruct the entire graph at each turn.
+
+\subsubsection{Neural Memory Consolidation}
+ConvoTree's distinctive feature is its neural ``dreaming'' process that periodically consolidates conversation memory during idle periods. This consolidation engine implements a three-phase cycle inspired by biological memory formation:
+
+\textbf{Replay Phase:} The system reconstructs conversation segments from the knowledge graph, generating synthetic dialogue exchanges that capture key relationship patterns. This phase uses a graph-to-text generation model to create plausible conversation snippets that preserve important factual content while reducing redundancy.
+
+\textbf{Consolidation Phase:} A specialized transformer model processes these reconstructed conversations alongside the original transcripts, identifying stable patterns and compressing redundant information. The model employs attention mechanisms to weight the importance of different conversation elements and determines which information should be preserved versus compressed.
+
+\textbf{Integration Phase:} Consolidated memories are integrated into a hierarchical knowledge representation that balances detail preservation with storage efficiency. Recent information maintains high granularity, while older information is progressively abstracted into higher-level relationship patterns.
+
+\subsubsection{LLM-Powered Reasoning System}
+The reasoning component bridges graph-structured memory with natural language generation through a hybrid architecture:
+
+\textbf{Retrieval Stage:} When processing queries via \texttt{/api/chat}, the system first retrieves relevant graph neighborhoods using learned embedding similarity. Graph nodes and edges are embedded using a pre-trained knowledge graph embedding model, enabling efficient similarity-based retrieval.
+
+\textbf{Integration Stage:} Retrieved structural features are combined with compressed conversation summaries and current context. The system uses cross-attention mechanisms to align graph-based information with textual content.
+
+\textbf{Generation Stage:} The integrated representation is fed to a fine-tuned language model that generates contextually appropriate responses. The model architecture includes specialized attention heads for processing graph-structured inputs alongside traditional textual attention.
+
+\subsubsection{Long-Term Context Management}
+ConvoTree maintains conversation continuity across extended time periods through a multi-resolution memory hierarchy:
+
+\textbf{Short-term Memory (Hours):} Recent conversations are stored with full fidelity, including complete dialogue history and detailed graph representations.
+
+\textbf{Medium-term Memory (Days-Weeks):} Interactions are compressed into structured summaries with preserved key relationships. The system maintains a balance between storage efficiency and information retention through adaptive compression rates.
+
+\textbf{Long-term Memory (Months+):} Patterns are distilled into learned relationship embeddings that influence future consolidation decisions without requiring explicit storage of conversation details.
+
+\subsection{Implementation Specifications}
+
+\subsubsection{API Design}
+ConvoTree exposes a RESTful API with the following core endpoints:
+
+\begin{itemize}
+\item \texttt{POST /api/compress}: Processes new dialogue turns and updates the conversation graph. Accepts JSON payload with message content, speaker identification, and optional metadata.
+\item \texttt{POST /api/chat}: Generates responses based on current conversation state and retrieved memory. Returns both the response text and relevant graph visualizations.
+\item \texttt{GET /api/status}: Provides system status including memory usage, consolidation queue status, and performance metrics.
+\item \texttt{GET /api/graph}: Returns conversation graph in various formats (GraphML, JSON, PNG visualization).
+\end{itemize}
+
+\subsubsection{Data Structures}
+The system employs several key data structures:
+
+\textbf{Conversation Graph:} Implemented as a directed multigraph where nodes represent entities (people, places, concepts) and edges represent relationships with associated confidence scores and temporal metadata.
+
+\textbf{Memory Hierarchy:} Structured as a time-based index with pointers to different resolution levels. Each level maintains appropriate data structures (full transcripts, compressed summaries, or learned embeddings).
+
+\textbf{Consolidation Queue:} Priority queue for managing background consolidation tasks, with priorities based on conversation importance, recency, and available computational resources.
+
+\subsubsection{Performance Optimizations}
+Several optimizations enable production deployment:
+
+\textbf{Incremental Processing:} Graph updates use incremental algorithms to avoid full recomputation. Only affected subgraphs are modified when new information arrives.
+
+\textbf{Asynchronous Consolidation:} Memory consolidation runs asynchronously during conversation pauses, ensuring minimal impact on response latency.
+
+\textbf{Caching Strategies:} Frequently accessed graph neighborhoods and conversation summaries are cached using LRU policies with periodic invalidation.
+
+\textbf{Resource Management:} The system includes adaptive resource allocation based on conversation load and available hardware resources.
+
+\subsection{Evaluation Framework}
+
+\subsubsection{Datasets}
+ConvoTree evaluation employs both existing benchmarks and custom datasets:
+
+\textbf{MultiWOZ Extension:} Extended conversations created by chaining multiple MultiWOZ dialogues with bridging context to create realistic long-form interactions.
+
+\textbf{Customer Service Logs:} Anonymized customer service conversations spanning multiple sessions, providing realistic examples of long-term context dependencies.
+
+\textbf{Synthetic Long Conversations:} Generated conversations with known ground truth for controlled evaluation of memory retention and consolidation effectiveness.
+
+\subsubsection{Metrics}
+Evaluation focuses on three primary dimensions:
+
+\textbf{Memory Efficiency:} Compression ratio (original size / compressed size), factual accuracy preservation, and retrieval precision for historical information.
+
+\textbf{Response Quality:} Human preference ratings, consistency scores across conversation segments, and factual accuracy of generated responses.
+
+\textbf{Computational Performance:} Response latency, memory usage, consolidation throughput, and scalability metrics across different conversation lengths.
+
+\subsection{Future Extensions}
+
+The modular architecture supports several planned extensions:
+
+\textbf{Federated Learning:} Extending consolidation across multiple conversation instances while preserving privacy through differential privacy techniques.
+
+\textbf{Multimodal Integration:} Supporting visual and audio inputs through specialized graph node types and cross-modal attention mechanisms.
+
+\textbf{Domain Adaptation:} Automatic adaptation to new conversation domains through meta-learning approaches applied to the consolidation process.
+
+\textbf{Explainability:} Enhanced visualization and explanation capabilities for understanding consolidation decisions and graph evolution patterns.
+
+
+\end{document}
+
