@@ -7,7 +7,16 @@
       "Bash(git push:*)",
       "Bash(mkdir:*)",
       "Bash(mv:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Bash(source .env)",
+      "Bash(unzip:*)",
+      "Bash(apt list:*)",
+      "Bash(pdflatex:*)",
+      "Bash(bibtex:*)",
+      "Bash(grep:*)",
+      "Bash(sed:*)",
+      "Bash(rm:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": [],

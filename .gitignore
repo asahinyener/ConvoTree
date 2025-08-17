@@ -1,5 +1,162 @@
-**static/**
-**.db**
-**report_*.json
-**.pyc
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.ruff_cache/
+pyrightconfig.json
+
+# Virtual Environments
 .env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# LaTeX (Paper directory specific)
+Paper/latex/*.aux
+Paper/latex/*.bbl
+Paper/latex/*.blg
+Paper/latex/*.fdb_latexmk
+Paper/latex/*.fls
+Paper/latex/*.log
+Paper/latex/*.out
+Paper/latex/*.synctex.gz
+Paper/latex/*.toc
+Paper/latex/*.lof
+Paper/latex/*.lot
+Paper/latex/*.idx
+Paper/latex/*.ilg
+Paper/latex/*.ind
+Paper/latex/*.bak
+Paper/latex/*.nav
+Paper/latex/*.snm
+Paper/latex/*.vrb
+Paper/latex/*.run.xml
+Paper/latex/*-blx.bib
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+.Trash-*
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.tmp
+*.temp
+*~
+
+# Cache
+.cache/
+*.cache
+
+# Test coverage
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Documentation build
+docs/_build/
+docs/build/
+site/
+
+# Package managers
+.pip/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Flask/Django
+instance/
+.webassets-cache
+local_settings.py
+*.mo
+*.pot
+
+# Secrets and credentials
+.env
+.env.*
+*.key
+*.pem
+*.crt
+secrets.json
+credentials.json
+config.local.json
+
+# Project specific
+conversations.db
+convotree.db
+convotree.log
+memory_store.json
+conversation_history.json
+*.checkpoint
+*.safetensors
+models/
+checkpoints/
+**static/**
+**report_*.json
